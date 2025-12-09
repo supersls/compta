@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'screens/factures/factures_list_screen.dart';
 
 void main() {
   runApp(const ComptaApp());
@@ -74,7 +75,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
       'icon': Icons.receipt_long_outlined,
       'selectedIcon': Icons.receipt_long,
       'label': 'Factures',
-      'screen': const FacturesPlaceholder(),
+      'screen': const FacturesListScreen(),
     },
     {
       'icon': Icons.money_outlined,
@@ -623,34 +624,6 @@ class _AlertItem extends StatelessWidget {
       ),
       title: Text(title),
       subtitle: Text(subtitle),
-    );
-  }
-}
-
-class FacturesPlaceholder extends StatelessWidget {
-  const FacturesPlaceholder({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.receipt_long, size: 64, color: Colors.grey[400]),
-          const SizedBox(height: 16),
-          Text(
-            'Gestion des Factures',
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'À implémenter',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Colors.grey,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
