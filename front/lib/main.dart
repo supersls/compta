@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'screens/factures/factures_list_screen.dart';
 import 'screens/tva/tva_list_screen.dart';
+import 'screens/immobilisations/immobilisations_list_screen.dart';
 
 void main() {
   runApp(const ComptaApp());
@@ -94,7 +95,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
       'icon': Icons.business_center_outlined,
       'selectedIcon': Icons.business_center,
       'label': 'Immobilisations',
-      'screen': const ImmobilisationsPlaceholder(),
+      'screen': const ImmobilisationsListScreen(),
     },
     {
       'icon': Icons.description_outlined,

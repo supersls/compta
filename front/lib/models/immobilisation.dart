@@ -56,27 +56,59 @@ class Immobilisation {
   factory Immobilisation.fromMap(Map<String, dynamic> map) {
     return Immobilisation(
       id: map['id'],
-      libelle: map['libelle'],
-      type: map['type'],
+      libelle: map['libelle'] ?? map['designation'] ?? '',
+      type: map['type'] ?? map['categorie'] ?? '',
       dateAcquisition: DateTime.parse(map['date_acquisition']),
-      valeurAcquisition: map['valeur_acquisition'],
-      dureeAmortissement: map['duree_amortissement'],
-      methodeAmortissement: map['methode_amortissement'],
-      tauxAmortissement: map['taux_amortissement'],
-      valeurResiduelle: map['valeur_residuelle'] ?? 0,
+      valeurAcquisition: (map['valeur_acquisition'] as num).toDouble(),
+      dureeAmortissement: map['duree_amortissement'] as int,
+      methodeAmortissement: map['methode_amortissement'] ?? 'lineaire',
+      tauxAmortissement: map['taux_amortissement'] != null
+          ? (map['taux_amortissement'] as num).toDouble()
+          : null,
+      valeurResiduelle: map['valeur_residuelle'] != null
+          ? (map['valeur_residuelle'] as num).toDouble()
+          : (map['valeur_nette_comptable'] != null
+              ? (map['valeur_nette_comptable'] as num).toDouble()
+              : 0),
       compteImmobilisation: map['compte_immobilisation'],
       compteAmortissement: map['compte_amortissement'],
-      enService: map['en_service'] == 1,
+      enService: map['en_service'] == 1 || map['en_service'] == true,
       dateCession: map['date_cession'] != null
           ? DateTime.parse(map['date_cession'])
           : null,
       notes: map['notes'],
-      createdAt: DateTime.parse(map['created_at']),
+      createdAt: map['created_at'] != null
+          ? DateTime.parse(map['created_at'])
+          : (map['date_creation'] != null
+              ? DateTime.parse(map['date_creation'])
+              : DateTime.now()),
     );
   }
 
   double get tauxAmortissementCalcule {
     if (tauxAmortissement != null) return tauxAmortissement!;
-    return 100 / dureeAmortissement;
+    if (methodeAmortissement == 'lineaire') {
+      return 100 / dureeAmortissement;
+    }
+    // Dégressif
+    double tauxLineaire = 100 / dureeAmortissement;
+    if (dureeAmortissement <= 3) return tauxLineaire * 1.25;
+    if (dureeAmortissement <= 5) return tauxLineaire * 1.75;
+    return tauxLineaire * 2.25;
   }
+
+  double get totalAmorti => valeurAcquisition - valeurResiduelle;
+
+  double get pourcentageAmorti {
+    if (valeurAcquisition == 0) return 0;
+    return (totalAmorti / valeurAcquisition) * 100;
+  }
+
+  int get anneesRestantes {
+    final now = DateTime.now();
+    final anneesEcoulees = now.year - dateAcquisition.year;
+    return (dureeAmortissement - anneesEcoulees).clamp(0, dureeAmortissement);
+  }
+
+  bool get estCedee => dateCession != null;
 }
