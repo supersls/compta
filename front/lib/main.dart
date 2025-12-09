@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'screens/factures/factures_list_screen.dart';
+import 'screens/tva/tva_list_screen.dart';
 
 void main() {
   runApp(const ComptaApp());
@@ -81,7 +82,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
       'icon': Icons.money_outlined,
       'selectedIcon': Icons.money,
       'label': 'TVA',
-      'screen': const TVAPlaceholder(),
+      'screen': const TVAListScreen(),
     },
     {
       'icon': Icons.account_balance_wallet_outlined,
