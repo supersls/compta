@@ -13,10 +13,8 @@ dependencies:
   # State Management
   provider: ^6.1.1
   
-  # Base de données locale
-  sqflite: ^2.3.0
-  path_provider: ^2.1.1
-  path: ^1.8.3
+  # HTTP Client
+  http: ^1.1.2
   
   # Export PDF/Excel
   pdf: ^3.10.7

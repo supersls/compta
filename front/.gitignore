@@ -1,32 +1,44 @@
-# Root gitignore
-.DS_Store
-.idea/
+# Miscellaneous
+*.class
 *.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.buildlog/
+.history
+.svn/
+migrate_working_dir/
 
-# Frontend Flutter - voir front/.gitignore pour plus de détails
-front/.dart_tool/
-front/build/
-front/.flutter-plugins
-front/.flutter-plugins-dependencies
-front/.metadata
-front/pubspec.lock
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
 
-# Backend Node.js
-backend/node_modules/
-backend/.env
-backend/*.log
-backend/package-lock.json
-
-# Docker
-docker-compose.override.yml
-
-# Database
-*.db
-*.sqlite
-*.sqlite3
-
-# Documentation temporaire
+# VS Code related
 .vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+/build/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android related
+**/android/**/gradle-wrapper.jar
+**/android/.gradle
 **/android/captures/
 **/android/gradlew
 **/android/gradlew.bat
@@ -66,22 +78,19 @@ docker-compose.override.yml
 lib/generated_plugin_registrant.dart
 
 # Windows related
-**/windows/**/flutter/generated_plugin_registrant.cc
-**/windows/**/flutter/generated_plugin_registrant.h
-**/windows/**/flutter/generated_plugins.cmake
+**/windows/**/Flutter/ephemeral/
 
 # macOS related
+**/macos/Flutter/ephemeral/
 **/macos/Flutter/GeneratedPluginRegistrant.swift
 
 # Linux related
-**/linux/flutter/generated_plugin_registrant.cc
-**/linux/flutter/generated_plugin_registrant.h
-**/linux/flutter/generated_plugins.cmake
+**/linux/flutter/ephemeral/
 
 # Coverage
 coverage/
 
-# Exceptions to above rules.
+# Exceptions to the above rules
 !**/ios/**/default.mode1v3
 !**/ios/**/default.mode2v3
 !**/ios/**/default.pbxuser

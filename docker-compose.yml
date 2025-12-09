@@ -5,8 +5,8 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_DB: compta_ei
-      POSTGRES_USER: compta_admin
-      POSTGRES_PASSWORD: compta_password_2024
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     ports:
       - "5432:5432"
     volumes:
@@ -27,6 +27,25 @@ services:
       - "5050:80"
     volumes:
       - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - compta_network
+    depends_on:
+      - postgres
+
+  backend:
+    build: ./backend
+    container_name: compta_backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: compta_ei
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+    ports:
+      - "3000:3000"
     networks:
       - compta_network
     depends_on:

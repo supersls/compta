@@ -2,6 +2,21 @@
 
 Application web et mobile développée avec Flutter pour la gestion de la comptabilité d'une Entreprise Individuelle au régime réel, conforme à la législation française.
 
+## 🏗️ Architecture
+
+```
+compta/
+├── front/           # Frontend Flutter (web, mobile, desktop)
+├── backend/         # Backend Node.js + Express (API REST)
+├── docker-compose.yml
+└── init.sql         # Schéma PostgreSQL
+```
+
+- **Frontend** : Flutter (web, Android, iOS, Windows, macOS, Linux) → `/front`
+- **Backend** : Node.js + Express (API REST) → `/backend`
+- **Base de données** : PostgreSQL 16
+- **Admin DB** : pgAdmin 4
+
 ## 🎯 Fonctionnalités
 
 - ✅ Gestion des ventes et achats (factures clients/fournisseurs)
@@ -17,18 +32,20 @@ Application web et mobile développée avec Flutter pour la gestion de la compta
 
 - Flutter SDK 3.0 ou supérieur
 - Dart 3.0 ou supérieur
+- Node.js 18 ou supérieur
+- Docker et Docker Compose
 - Un IDE (VS Code, Android Studio, IntelliJ)
-- Docker et Docker Compose (pour la base de données PostgreSQL)
 
 ## 🚀 Installation
 
-1. Cloner le projet :
+### 1. Cloner le projet
 ```bash
 git clone <url-du-projet>
 cd compta
 ```
 
-2. Démarrer la base de données PostgreSQL avec Docker :
+### 2. Démarrer l'infrastructure avec Docker
+
 ```bash
 docker-compose up -d
 ```
@@ -36,48 +53,135 @@ docker-compose up -d
 Cela démarre :
 - **PostgreSQL** sur le port `5432`
   - Base de données : `compta_ei`
-  - Utilisateur : `compta_admin`
-  - Mot de passe : `compta_password_2024`
+  - Utilisateur : `postgres`
+  - Mot de passe : `postgres`
+- **Backend API** sur le port `3000`
+  - URL : http://localhost:3000
+  - Health check : http://localhost:3000/health
 - **pgAdmin** sur le port `5050`
   - URL : http://localhost:5050
   - Email : `admin@compta.fr`
   - Mot de passe : `admin123`
 
-3. Installer les dépendances Flutter :
+### 3. Installer les dépendances Flutter
+
 ```bash
+cd front
 flutter pub get
 ```
 
-4. Lancer l'application :
+### 4. Lancer l'application Flutter
+
 ```bash
-flutter run
+cd front
+
+# Web
+flutter run -d chrome
+
+# Windows
+flutter run -d windows
+
+# Android/iOS
+## 🔧 Développement sans Docker
+
+### Backend local
+
+```bash
+cd backend
+npm install
+npm run dev
 ```
 
-### Accéder à pgAdmin
+Le serveur démarre sur http://localhost:3000
 
-1. Ouvrir http://localhost:5050 dans votre navigateur
-2. Se connecter avec :
-   - Email : `admin@compta.fr`
-   - Mot de passe : `admin123`
-3. Ajouter un nouveau serveur :
-   - **Général** → Nom : `Compta EI`
-   - **Connection** :
-     - Host : `postgres` (ou `localhost` si accès depuis l'hôte)
-     - Port : `5432`
-     - Database : `compta_ei`
-     - Username : `compta_admin`
-     - Password : `compta_password_2024`
-
-### Commandes Docker utiles
+### Frontend Flutter
 
 ```bash
-# Démarrer les conteneurs
+cd front
+flutter pub get
+flutter run -d chrome
+```
+```bash
+flutter run -d chrome
+```
+
+## 🗄️ Accès à la base de données
+
+### Via pgAdmin
+
+1. Ouvrir http://localhost:5050
+2. Se connecter :
+   - Email : `admin@compta.fr`
+   - Mot de passe : `admin123`
+3. Ajouter un serveur :
+   - **Général** → Nom : `Compta EI`
+   - **Connection** :
+     - Host : `postgres` (depuis Docker) ou `localhost` (depuis l'hôte)
+     - Port : `5432`
+     - Database : `compta_ei`
+     - Username : `postgres`
+     - Password : `postgres`
+
+### Via ligne de commande
+
+```bash
+docker exec -it compta_postgres psql -U postgres -d compta_ei
+```
+
+## 📡 API Endpoints
+
+### Factures
+- `GET /api/factures` - Liste toutes les factures
+- `POST /api/factures` - Créer une facture
+- `GET /api/factures/:id` - Détails d'une facture
+- `PUT /api/factures/:id` - Mettre à jour une facture
+- `DELETE /api/factures/:id` - Supprimer une facture
+- `GET /api/factures/stats/overview` - Statistiques
+
+### TVA
+- `GET /api/tva/declarations` - Déclarations TVA
+- `GET /api/tva/calcul/:debut/:fin` - Calcul TVA période
+
+### Banque
+- `GET /api/banque/comptes` - Comptes bancaires
+- `GET /api/banque/transactions` - Transactions
+
+### Immobilisations
+- `GET /api/immobilisations` - Liste immobilisations
+- `GET /api/immobilisations/amortissements` - Amortissements
+
+### Comptabilité
+- `GET /api/comptabilite/ecritures` - Écritures comptables
+- `GET /api/comptabilite/plan-comptable` - Plan comptable
+- `GET /api/comptabilite/balance/:debut/:fin` - Balance
+
+Documentation complète : [backend/README.md](backend/README.md)
+
+## 🐳 Commandes Docker utiles
+
+```bash
+# Démarrer tous les services
 docker-compose up -d
 
-# Arrêter les conteneurs
+# Arrêter tous les services
 docker-compose down
 
 # Voir les logs
+docker-compose logs -f
+
+# Voir les logs d'un service spécifique
+docker-compose logs -f backend
+docker-compose logs -f postgres
+
+# Redémarrer un service
+docker-compose restart backend
+
+# Reconstruire les images
+docker-compose build --no-cache
+
+# Supprimer les volumes (⚠️ perte de données)
+docker-compose down -v
+```
 docker-compose logs -f
 
 # Redémarrer les conteneurs
