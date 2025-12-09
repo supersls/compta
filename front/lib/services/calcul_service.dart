@@ -158,7 +158,7 @@ class CalculService {
   }
 
   /// Arrondit à 2 décimales
-  static double _arrondir(double montant) {
+  static double _arrondir(num montant) {
     return (montant * 100).round() / 100;
   }
 

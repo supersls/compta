@@ -607,8 +607,8 @@ class _ImmobilisationDetailScreenState extends State<ImmobilisationDetailScreen>
     if (confirmed == true && mounted) {
       try {
         final prix = prixController.text.isNotEmpty
-            ? double.tryParse(prixController.text) ?? 0
-            : 0;
+            ? double.tryParse(prixController.text) ?? 0.0
+            : 0.0;
 
         await _service.cederImmobilisation(
           _immobilisation.id!,

@@ -18,6 +18,7 @@ app.use('/api/banque', require('./routes/banque'));
 app.use('/api/immobilisations', require('./routes/immobilisations'));
 app.use('/api/comptabilite', require('./routes/comptabilite'));
 app.use('/api/entreprise', require('./routes/entreprise'));
+app.use('/api/documents', require('./routes/documents'));
 
 // Health check
 app.get('/health', (req, res) => {
@@ -38,7 +39,7 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Route non trouvée' });
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Serveur démarré sur http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Serveur démarré sur http://0.0.0.0:${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
 });

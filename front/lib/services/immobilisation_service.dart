@@ -1,4 +1,4 @@
-import '../config/api_service.dart';
+import '../services/api_service.dart';
 import '../models/immobilisation.dart';
 
 class ImmobilisationService {

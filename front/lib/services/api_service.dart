@@ -4,11 +4,17 @@ import '../config/api_config.dart';
 
 class ApiService {
   // GET request
-  static Future<dynamic> get(String endpoint) async {
+  static Future<dynamic> get(String endpoint, {Map<String, dynamic>? queryParams}) async {
     try {
+      var uri = Uri.parse('${ApiConfig.baseUrl}/$endpoint');
+      
+      if (queryParams != null && queryParams.isNotEmpty) {
+        uri = uri.replace(queryParameters: queryParams.map((key, value) => MapEntry(key, value.toString())));
+      }
+      
       final response = await http
           .get(
-            Uri.parse('${ApiConfig.baseUrl}/$endpoint'),
+            uri,
             headers: {'Content-Type': 'application/json'},
           )
           .timeout(ApiConfig.timeout);
@@ -81,6 +87,28 @@ class ApiService {
           .timeout(ApiConfig.timeout);
 
       return _handleResponse(response);
+    } catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  // Download file (PDF/Excel)
+  static Future<void> downloadFile(String endpoint, {Map<String, dynamic>? queryParams}) async {
+    try {
+      var uri = Uri.parse('${ApiConfig.baseUrl}/$endpoint');
+      
+      if (queryParams != null && queryParams.isNotEmpty) {
+        uri = uri.replace(queryParameters: queryParams.map((key, value) => MapEntry(key, value.toString())));
+      }
+      
+      // Pour le web, on ouvre simplement l'URL dans un nouvel onglet
+      // Le navigateur gèrera automatiquement le téléchargement
+      // ignore: avoid_web_libraries_in_flutter
+      // import 'dart:html' as html;
+      // html.window.open(uri.toString(), '_blank');
+      
+      // Pour l'instant, on lance juste la requête
+      await http.get(uri).timeout(ApiConfig.timeout);
     } catch (e) {
       throw _handleError(e);
     }

@@ -74,4 +74,6 @@ class EcritureComptable {
   }
 
   bool get estEquilibree => (debit - credit).abs() < 0.01;
+  bool get isDebit => debit > 0;
+  bool get isCredit => credit > 0;
 }

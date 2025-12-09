@@ -128,7 +128,7 @@ class _ImmobilisationFormScreenState extends State<ImmobilisationFormScreen> {
                 labelText: 'Désignation',
                 prefixIcon: Icon(Icons.label),
               ),
-              validator: AppValidators.validateRequired,
+              validator: (value) => AppValidators.validateRequired(value, 'Désignation'),
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(

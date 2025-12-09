@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../models/declaration_tva.dart';
 import '../../services/tva_service.dart';
 import '../../utils/formatters.dart';
-import '../../utils/constants.dart';
 import 'declaration_tva_form_screen.dart';
 import 'declaration_tva_detail_screen.dart';
 import 'calculateur_tva_screen.dart';

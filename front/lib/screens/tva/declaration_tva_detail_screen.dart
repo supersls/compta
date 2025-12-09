@@ -297,20 +297,11 @@ class _DeclarationTVADetailScreenState extends State<DeclarationTVADetailScreen>
                   ),
             ),
             const SizedBox(height: 16),
-            if (_declaration.dateCreation != null)
-              _buildDateRow(
-                'Créée le',
-                _declaration.dateCreation!,
-                Icons.add_circle,
-              ),
-            if (_declaration.dateValidation != null) ...[
-              const SizedBox(height: 12),
-              _buildDateRow(
-                'Validée le',
-                _declaration.dateValidation!,
-                Icons.verified,
-              ),
-            ],
+            _buildDateRow(
+              'Créée le',
+              _declaration.createdAt,
+              Icons.add_circle,
+            ),
             if (_declaration.dateTransmission != null) ...[
               const SizedBox(height: 12),
               _buildDateRow(
@@ -518,7 +509,6 @@ class _DeclarationTVADetailScreenState extends State<DeclarationTVADetailScreen>
         setState(() {
           _declaration = _declaration.copyWith(
             statut: 'validee',
-            dateValidation: DateTime.now(),
           );
         });
 
@@ -551,7 +541,7 @@ class _DeclarationTVADetailScreenState extends State<DeclarationTVADetailScreen>
     setState(() => _isLoading = true);
 
     try {
-      await _tvaService.marquerTransmise(_declaration.id!);
+      await _tvaService.marquerTransmise(_declaration.id!, DateTime.now());
 
       setState(() {
         _declaration = _declaration.copyWith(
@@ -588,7 +578,7 @@ class _DeclarationTVADetailScreenState extends State<DeclarationTVADetailScreen>
     setState(() => _isLoading = true);
 
     try {
-      await _tvaService.marquerPayee(_declaration.id!);
+      await _tvaService.marquerPayee(_declaration.id!, DateTime.now());
 
       setState(() {
         _declaration = _declaration.copyWith(

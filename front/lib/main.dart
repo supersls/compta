@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'screens/factures/factures_list_screen.dart';
 import 'screens/tva/tva_list_screen.dart';
 import 'screens/immobilisations/immobilisations_list_screen.dart';
+import 'screens/banque/banque_list_screen.dart';
+import 'screens/documents/documents_list_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('fr_FR', null);
   runApp(const ComptaApp());
 }
 
@@ -89,7 +93,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
       'icon': Icons.account_balance_wallet_outlined,
       'selectedIcon': Icons.account_balance_wallet,
       'label': 'Banque',
-      'screen': const BanquePlaceholder(),
+      'screen': const BanqueListScreen(),
     },
     {
       'icon': Icons.business_center_outlined,
@@ -101,13 +105,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
       'icon': Icons.description_outlined,
       'selectedIcon': Icons.description,
       'label': 'Documents',
-      'screen': const DocumentsPlaceholder(),
+      'screen': const DocumentsListScreen(),
     },
   ];
 
   @override
   Widget build(BuildContext context) {
-    final isDesktop = MediaQuery.of(context).size.width >= 1200;
     final isTablet = MediaQuery.of(context).size.width >= 768;
 
     return Scaffold(
@@ -643,34 +646,6 @@ class TVAPlaceholder extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             'Gestion de la TVA',
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'À implémenter',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Colors.grey,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class BanquePlaceholder extends StatelessWidget {
-  const BanquePlaceholder({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.account_balance, size: 64, color: Colors.grey[400]),
-          const SizedBox(height: 16),
-          Text(
-            'Gestion Bancaire',
             style: Theme.of(context).textTheme.headlineSmall,
           ),
           const SizedBox(height: 8),
