@@ -20,7 +20,7 @@ class ComptaApp extends StatelessWidget {
         ),
         useMaterial3: true,
         appBarTheme: const AppBarTheme(
-          centerTitle: true,
+          centerTitle: false,
           elevation: 0,
         ),
         cardTheme: CardThemeData(
@@ -47,165 +47,415 @@ class ComptaApp extends StatelessWidget {
         useMaterial3: true,
       ),
       themeMode: ThemeMode.system,
-      home: const HomeScreen(),
+      home: const AdminDashboard(),
     );
   }
 }
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+class AdminDashboard extends StatefulWidget {
+  const AdminDashboard({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<AdminDashboard> createState() => _AdminDashboardState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _AdminDashboardState extends State<AdminDashboard> {
   int _selectedIndex = 0;
+  bool _isDrawerExpanded = true;
 
-  final List<Widget> _screens = [
-    const DashboardPlaceholder(),
-    const FacturesPlaceholder(),
-    const TVAPlaceholder(),
-    const BanquePlaceholder(),
-    const DocumentsPlaceholder(),
+  final List<Map<String, dynamic>> _menuItems = [
+    {
+      'icon': Icons.dashboard_outlined,
+      'selectedIcon': Icons.dashboard,
+      'label': 'Tableau de bord',
+      'screen': const DashboardPlaceholder(),
+    },
+    {
+      'icon': Icons.receipt_long_outlined,
+      'selectedIcon': Icons.receipt_long,
+      'label': 'Factures',
+      'screen': const FacturesPlaceholder(),
+    },
+    {
+      'icon': Icons.money_outlined,
+      'selectedIcon': Icons.money,
+      'label': 'TVA',
+      'screen': const TVAPlaceholder(),
+    },
+    {
+      'icon': Icons.account_balance_wallet_outlined,
+      'selectedIcon': Icons.account_balance_wallet,
+      'label': 'Banque',
+      'screen': const BanquePlaceholder(),
+    },
+    {
+      'icon': Icons.business_center_outlined,
+      'selectedIcon': Icons.business_center,
+      'label': 'Immobilisations',
+      'screen': const ImmobilisationsPlaceholder(),
+    },
+    {
+      'icon': Icons.description_outlined,
+      'selectedIcon': Icons.description,
+      'label': 'Documents',
+      'screen': const DocumentsPlaceholder(),
+    },
   ];
 
   @override
   Widget build(BuildContext context) {
+    final isDesktop = MediaQuery.of(context).size.width >= 1200;
+    final isTablet = MediaQuery.of(context).size.width >= 768;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Compta EI'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () {},
-          ),
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () {},
+      body: Row(
+        children: [
+          // Sidebar navigation (desktop/tablet)
+          if (isTablet)
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: _isDrawerExpanded ? 260 : 80,
+              child: _buildSidebar(),
+            ),
+          
+          // Main content area
+          Expanded(
+            child: Column(
+              children: [
+                _buildTopBar(context, isTablet),
+                Expanded(
+                  child: _menuItems[_selectedIndex]['screen'] as Widget,
+                ),
+              ],
+            ),
           ),
         ],
       ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            DrawerHeader(
+      // Mobile drawer
+      drawer: !isTablet ? _buildMobileDrawer() : null,
+    );
+  }
+
+  Widget _buildTopBar(BuildContext context, bool isTablet) {
+    return Container(
+      height: 64,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        border: Border(
+          bottom: BorderSide(
+            color: Theme.of(context).dividerColor,
+            width: 1,
+          ),
+        ),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          if (!isTablet)
+            IconButton(
+              icon: const Icon(Icons.menu),
+              onPressed: () {
+                Scaffold.of(context).openDrawer();
+              },
+            ),
+          const SizedBox(width: 8),
+          Text(
+            _menuItems[_selectedIndex]['label'],
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const Spacer(),
+          // Search bar (desktop only)
+          if (MediaQuery.of(context).size.width >= 1200)
+            Container(
+              width: 300,
+              height: 40,
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary,
+                color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(20),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Icon(
-                    Icons.account_balance,
-                    size: 48,
-                    color: Theme.of(context).colorScheme.onPrimary,
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Rechercher...',
+                  prefixIcon: const Icon(Icons.search, size: 20),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                ),
+              ),
+            ),
+          const SizedBox(width: 16),
+          // Notifications
+          Badge(
+            label: const Text('3'),
+            child: IconButton(
+              icon: const Icon(Icons.notifications_outlined),
+              onPressed: () {},
+            ),
+          ),
+          const SizedBox(width: 8),
+          // User profile
+          PopupMenuButton<String>(
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 18,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  child: const Icon(Icons.person, size: 20, color: Colors.white),
+                ),
+                const SizedBox(width: 8),
+                if (MediaQuery.of(context).size.width >= 1200)
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Admin',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        'admin@compta.fr',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Compta EI',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onPrimary,
+              ],
+            ),
+            itemBuilder: (context) => <PopupMenuEntry<String>>[
+              const PopupMenuItem<String>(
+                value: 'profile',
+                child: ListTile(
+                  leading: Icon(Icons.person_outline),
+                  title: Text('Profil'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              const PopupMenuItem<String>(
+                value: 'settings',
+                child: ListTile(
+                  leading: Icon(Icons.settings_outlined),
+                  title: Text('Paramètres'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              const PopupMenuDivider(),
+              const PopupMenuItem<String>(
+                value: 'logout',
+                child: ListTile(
+                  leading: Icon(Icons.logout),
+                  title: Text('Déconnexion'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+            ],
+            onSelected: (value) {
+              // Handle menu selection
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSidebar() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        border: Border(
+          right: BorderSide(
+            color: Theme.of(context).dividerColor,
+            width: 1,
+          ),
+        ),
+      ),
+      child: Column(
+        children: [
+          // Logo/Brand
+          Container(
+            height: 64,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.account_balance,
+                  size: 32,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                if (_isDrawerExpanded) ...[
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Compta EI',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                     ),
                   ),
+                ],
+                IconButton(
+                  icon: Icon(
+                    _isDrawerExpanded ? Icons.chevron_left : Icons.chevron_right,
+                  ),
+                  onPressed: () {
+                    setState(() => _isDrawerExpanded = !_isDrawerExpanded);
+                  },
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          
+          // Navigation items
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              itemCount: _menuItems.length,
+              itemBuilder: (context, index) {
+                final item = _menuItems[index];
+                final isSelected = _selectedIndex == index;
+                
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  child: Material(
+                    color: isSelected
+                        ? Theme.of(context).colorScheme.primaryContainer
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                    child: InkWell(
+                      onTap: () => setState(() => _selectedIndex = index),
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              isSelected ? item['selectedIcon'] : item['icon'],
+                              color: isSelected
+                                  ? Theme.of(context).colorScheme.primary
+                                  : Theme.of(context).colorScheme.onSurface,
+                            ),
+                            if (_isDrawerExpanded) ...[
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Text(
+                                  item['label'],
+                                  style: TextStyle(
+                                    color: isSelected
+                                        ? Theme.of(context).colorScheme.primary
+                                        : Theme.of(context).colorScheme.onSurface,
+                                    fontWeight: isSelected
+                                        ? FontWeight.w600
+                                        : FontWeight.normal,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          
+          // Settings at bottom
+          const Divider(height: 1),
+          if (_isDrawerExpanded)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    'Comptabilité simplifiée',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.8),
+                    'Exercice 2024',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.grey,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  LinearProgressIndicator(
+                    value: 0.75,
+                    backgroundColor: Colors.grey.shade200,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '9 mois sur 12',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.grey,
                     ),
                   ),
                 ],
               ),
             ),
-            ListTile(
-              leading: const Icon(Icons.dashboard_outlined),
-              title: const Text('Tableau de bord'),
-              selected: _selectedIndex == 0,
-              onTap: () {
-                setState(() => _selectedIndex = 0);
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.receipt_long_outlined),
-              title: const Text('Factures'),
-              selected: _selectedIndex == 1,
-              onTap: () {
-                setState(() => _selectedIndex = 1);
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.money_outlined),
-              title: const Text('TVA'),
-              selected: _selectedIndex == 2,
-              onTap: () {
-                setState(() => _selectedIndex = 2);
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.account_balance_wallet_outlined),
-              title: const Text('Banque'),
-              selected: _selectedIndex == 3,
-              onTap: () {
-                setState(() => _selectedIndex = 3);
-                Navigator.pop(context);
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.business_center_outlined),
-              title: const Text('Immobilisations'),
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.description_outlined),
-              title: const Text('Documents'),
-              selected: _selectedIndex == 4,
-              onTap: () {
-                setState(() => _selectedIndex = 4);
-                Navigator.pop(context);
-              },
-            ),
-          ],
-        ),
+        ],
       ),
-      body: _screens[_selectedIndex],
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: (index) {
-          setState(() => _selectedIndex = index);
-        },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(Icons.dashboard),
-            label: 'Tableau de bord',
+    );
+  }
+
+  Widget _buildMobileDrawer() {
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          DrawerHeader(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                const Icon(
+                  Icons.account_balance,
+                  size: 48,
+                  color: Colors.white,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Compta EI',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  'Comptabilité simplifiée',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.white.withOpacity(0.8),
+                  ),
+                ),
+              ],
+            ),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.receipt_long_outlined),
-            selectedIcon: Icon(Icons.receipt_long),
-            label: 'Factures',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.money_outlined),
-            selectedIcon: Icon(Icons.money),
-            label: 'TVA',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.account_balance_wallet_outlined),
-            selectedIcon: Icon(Icons.account_balance_wallet),
-            label: 'Banque',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.description_outlined),
-            selectedIcon: Icon(Icons.description),
-            label: 'Documents',
+          ...List.generate(_menuItems.length, (index) {
+            final item = _menuItems[index];
+            return ListTile(
+              leading: Icon(
+                _selectedIndex == index ? item['selectedIcon'] : item['icon'],
+              ),
+              title: Text(item['label']),
+              selected: _selectedIndex == index,
+              onTap: () {
+                setState(() => _selectedIndex = index);
+                Navigator.pop(context);
+              },
+            );
+          }),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.settings_outlined),
+            title: const Text('Paramètres'),
+            onTap: () {},
           ),
         ],
       ),
@@ -446,6 +696,34 @@ class BanquePlaceholder extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             'Gestion Bancaire',
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'À implémenter',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Colors.grey,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class ImmobilisationsPlaceholder extends StatelessWidget {
+  const ImmobilisationsPlaceholder({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.business_center, size: 64, color: Colors.grey[400]),
+          const SizedBox(height: 16),
+          Text(
+            'Gestion des Immobilisations',
             style: Theme.of(context).textTheme.headlineSmall,
           ),
           const SizedBox(height: 8),
