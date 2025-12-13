@@ -65,20 +65,32 @@ router.post('/comptes', async (req, res) => {
 // POST créer transaction
 router.post('/transactions', async (req, res) => {
   try {
-    const { compte_bancaire_id, date_transaction, type, montant, categorie, description, reference } = req.body;
+    const { compte_bancaire_id, date_transaction, date_valeur, libelle, debit, credit, categorie, notes } = req.body;
+    
+    // Get current balance
+    const compteResult = await pool.query(
+      'SELECT solde_actuel FROM comptes_bancaires WHERE id = $1',
+      [compte_bancaire_id]
+    );
+    
+    if (compteResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Compte bancaire non trouvé' });
+    }
+    
+    const soldeActuel = parseFloat(compteResult.rows[0]?.solde_actuel || 0);
+    const nouveauSolde = soldeActuel + parseFloat(credit || 0) - parseFloat(debit || 0);
     
     const result = await pool.query(`
       INSERT INTO transactions_bancaires (
-        compte_bancaire_id, date_transaction, type, montant, categorie, description, reference
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+        compte_bancaire_id, date_transaction, date_valeur, libelle, debit, credit, solde, categorie, notes
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING *
-    `, [compte_bancaire_id, date_transaction, type, montant, categorie, description, reference]);
+    `, [compte_bancaire_id, date_transaction, date_valeur, libelle, debit || 0, credit || 0, nouveauSolde, categorie, notes]);
     
     // Mise à jour du solde du compte
-    const montantAjuste = type === 'credit' ? montant : -montant;
     await pool.query(
-      'UPDATE comptes_bancaires SET solde_actuel = solde_actuel + $1 WHERE id = $2',
-      [montantAjuste, compte_bancaire_id]
+      'UPDATE comptes_bancaires SET solde_actuel = $1 WHERE id = $2',
+      [nouveauSolde, compte_bancaire_id]
     );
     
     res.status(201).json(result.rows[0]);
@@ -140,7 +152,7 @@ router.delete('/comptes/:id', async (req, res) => {
 router.put('/transactions/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { compte_bancaire_id, date_transaction, type, montant, categorie, description, reference } = req.body;
+    const { compte_bancaire_id, date_transaction, date_valeur, libelle, debit, credit, categorie, notes } = req.body;
     
     // Récupérer l'ancienne transaction pour recalculer le solde
     const oldResult = await pool.query(
@@ -154,23 +166,32 @@ router.put('/transactions/:id', async (req, res) => {
     
     const oldTransaction = oldResult.rows[0];
     
+    // Calculer impact ancien et nouveau
+    const oldImpact = parseFloat(oldTransaction.credit || 0) - parseFloat(oldTransaction.debit || 0);
+    const newImpact = parseFloat(credit || 0) - parseFloat(debit || 0);
+    
+    // Get current solde
+    const compteResult = await pool.query(
+      'SELECT solde_actuel FROM comptes_bancaires WHERE id = $1',
+      [compte_bancaire_id]
+    );
+    
+    const soldeActuel = parseFloat(compteResult.rows[0]?.solde_actuel || 0);
+    const nouveauSolde = soldeActuel - oldImpact + newImpact;
+    
     // Mise à jour de la transaction
     const result = await pool.query(`
       UPDATE transactions_bancaires 
-      SET compte_bancaire_id = $1, date_transaction = $2, type = $3, montant = $4,
-          categorie = $5, description = $6, reference = $7
-      WHERE id = $8
+      SET compte_bancaire_id = $1, date_transaction = $2, date_valeur = $3, libelle = $4,
+          debit = $5, credit = $6, solde = $7, categorie = $8, notes = $9
+      WHERE id = $10
       RETURNING *
-    `, [compte_bancaire_id, date_transaction, type, montant, categorie, description, reference, id]);
+    `, [compte_bancaire_id, date_transaction, date_valeur, libelle, debit || 0, credit || 0, nouveauSolde, categorie, notes, id]);
     
-    // Annuler l'ancien impact sur le solde
-    const oldMontantAjuste = oldTransaction.type === 'credit' ? -oldTransaction.montant : oldTransaction.montant;
-    // Appliquer le nouveau impact
-    const newMontantAjuste = type === 'credit' ? montant : -montant;
-    
+    // Mise à jour du solde du compte
     await pool.query(
-      'UPDATE comptes_bancaires SET solde_actuel = solde_actuel + $1 + $2 WHERE id = $3',
-      [oldMontantAjuste, newMontantAjuste, compte_bancaire_id]
+      'UPDATE comptes_bancaires SET solde_actuel = $1 WHERE id = $2',
+      [nouveauSolde, compte_bancaire_id]
     );
     
     res.json(result.rows[0]);
@@ -201,10 +222,10 @@ router.delete('/transactions/:id', async (req, res) => {
     await pool.query('DELETE FROM transactions_bancaires WHERE id = $1', [id]);
     
     // Annuler l'impact sur le solde
-    const montantAjuste = transaction.type === 'credit' ? -transaction.montant : transaction.montant;
+    const impact = parseFloat(transaction.credit || 0) - parseFloat(transaction.debit || 0);
     await pool.query(
-      'UPDATE comptes_bancaires SET solde_actuel = solde_actuel + $1 WHERE id = $2',
-      [montantAjuste, transaction.compte_bancaire_id]
+      'UPDATE comptes_bancaires SET solde_actuel = solde_actuel - $1 WHERE id = $2',
+      [impact, transaction.compte_bancaire_id]
     );
     
     res.json({ message: 'Transaction supprimée avec succès' });
@@ -221,7 +242,7 @@ router.patch('/transactions/:id/rapprocher', async (req, res) => {
     
     const result = await pool.query(`
       UPDATE transactions_bancaires 
-      SET rapproche = true, date_rapprochement = CURRENT_TIMESTAMP
+      SET rapproche = true
       WHERE id = $1
       RETURNING *
     `, [id]);
@@ -262,8 +283,8 @@ router.get('/comptes/:id/statistiques', async (req, res) => {
     
     const result = await pool.query(`
       SELECT 
-        SUM(CASE WHEN type = 'credit' THEN montant ELSE 0 END) as total_credits,
-        SUM(CASE WHEN type = 'debit' THEN montant ELSE 0 END) as total_debits,
+        COALESCE(SUM(credit), 0) as total_credits,
+        COALESCE(SUM(debit), 0) as total_debits,
         COUNT(*) as nombre_transactions,
         COUNT(CASE WHEN rapproche = true THEN 1 END) as nombre_rapprochees
       FROM transactions_bancaires

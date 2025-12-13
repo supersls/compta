@@ -13,51 +13,21 @@ class TVAService {
     final debutStr = debut.toIso8601String().split('T')[0];
     final finStr = fin.toIso8601String().split('T')[0];
     
-    return await ApiService.get('tva/calcul/$debutStr/$finStr');
+    final result = await ApiService.get('tva/calcul/$debutStr/$finStr');
+    
+    // Map backend field names to frontend expected names
+    return {
+      'tva_collectee': result['tvaCollectee'] ?? 0,
+      'tva_deductible': result['tvaDeductible'] ?? 0,
+      'tva_a_decaisser': result['tvaADecaisser'] ?? 0,
+      'periode_debut': result['periodeDebut'],
+      'periode_fin': result['periodeFin'],
+    };
   }
 
-  // Créer une déclaration TVA
-  Future<DeclarationTVA> createDeclaration(DeclarationTVA declaration) async {
-    final data = await ApiService.post('tva/declarations', declaration.toMap());
-    return DeclarationTVA.fromMap(data);
-  }
-
-  // Mettre à jour une déclaration
-  Future<DeclarationTVA> updateDeclaration(DeclarationTVA declaration) async {
-    final data = await ApiService.put(
-      'tva/declarations/${declaration.id}',
-      declaration.toMap(),
-    );
-    return DeclarationTVA.fromMap(data);
-  }
-
-  // Supprimer une déclaration
-  Future<void> deleteDeclaration(int id) async {
-    await ApiService.delete('tva/declarations/$id');
-  }
-
-  // Valider une déclaration
-  Future<DeclarationTVA> validerDeclaration(int id) async {
-    final data = await ApiService.patch('tva/declarations/$id/valider', {});
-    return DeclarationTVA.fromMap(data);
-  }
-
-  // Marquer comme transmise
-  Future<DeclarationTVA> marquerTransmise(int id, DateTime dateTransmission) async {
-    final data = await ApiService.patch('tva/declarations/$id/transmettre', {
-      'date_transmission': dateTransmission.toIso8601String(),
-    });
-    return DeclarationTVA.fromMap(data);
-  }
-
-  // Marquer comme payée
-  Future<DeclarationTVA> marquerPayee(int id, DateTime datePaiement) async {
-    final data = await ApiService.patch('tva/declarations/$id/payer', {
-      'date_paiement': datePaiement.toIso8601String(),
-    });
-    return DeclarationTVA.fromMap(data);
-  }
-
+  // NOTE: Create, update, delete endpoints are not implemented in backend yet
+  // These features are disabled until backend implementation is complete
+  
   // Récupérer les statistiques TVA
   Future<Map<String, dynamic>> getStatistiquesTVA() async {
     return await ApiService.get('tva/statistiques');

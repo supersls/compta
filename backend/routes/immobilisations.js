@@ -17,10 +17,10 @@ router.get('/', async (req, res) => {
 router.get('/amortissements', async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT a.*, i.designation as immobilisation_nom
+      SELECT a.*, i.libelle as immobilisation_nom
       FROM amortissements a
       LEFT JOIN immobilisations i ON a.immobilisation_id = i.id
-      ORDER BY a.annee DESC, a.date_comptabilisation DESC
+      ORDER BY a.annee DESC
     `);
     res.json(result.rows);
   } catch (err) {
@@ -34,19 +34,21 @@ router.post('/', async (req, res) => {
   try {
     const {
       libelle, type, date_acquisition, valeur_acquisition,
-      duree_amortissement, methode_amortissement, taux_amortissement, notes
+      duree_amortissement, methode_amortissement, taux_amortissement, 
+      valeur_residuelle, compte_immobilisation, compte_amortissement, en_service, notes
     } = req.body;
     
     const result = await pool.query(`
       INSERT INTO immobilisations (
-        designation, categorie, date_acquisition, valeur_acquisition,
+        libelle, type, date_acquisition, valeur_acquisition,
         duree_amortissement, methode_amortissement, taux_amortissement,
-        valeur_nette_comptable, notes
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $4, $8)
+        valeur_residuelle, compte_immobilisation, compte_amortissement, en_service, notes
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING *
     `, [
       libelle, type, date_acquisition, valeur_acquisition,
-      duree_amortissement, methode_amortissement, taux_amortissement, notes
+      duree_amortissement, methode_amortissement || 'lineaire', taux_amortissement,
+      valeur_residuelle || 0, compte_immobilisation, compte_amortissement, en_service !== false, notes
     ]);
     
     res.status(201).json(result.rows[0]);
@@ -59,19 +61,22 @@ router.post('/', async (req, res) => {
 // POST créer amortissement
 router.post('/amortissements', async (req, res) => {
   try {
-    const { immobilisation_id, annee, montant, valeur_nette_comptable } = req.body;
+    const { immobilisation_id, annee, dotation, montant_amortissement, cumul_amortissements, valeur_nette_comptable, exercice } = req.body;
     
     const result = await pool.query(`
-      INSERT INTO amortissements (immobilisation_id, annee, montant, valeur_nette_comptable)
-      VALUES ($1, $2, $3, $4)
+      INSERT INTO amortissements (
+        immobilisation_id, annee, exercice, montant_amortissement, 
+        cumul_amortissements, valeur_nette_comptable
+      ) VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *
-    `, [immobilisation_id, annee, montant, valeur_nette_comptable]);
-    
-    // Mise à jour VNC de l'immobilisation
-    await pool.query(
-      'UPDATE immobilisations SET valeur_nette_comptable = $1 WHERE id = $2',
-      [valeur_nette_comptable, immobilisation_id]
-    );
+    `, [
+      immobilisation_id, 
+      annee, 
+      exercice || annee,
+      montant_amortissement || dotation,
+      cumul_amortissements,
+      valeur_nette_comptable
+    ]);
     
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -86,19 +91,23 @@ router.put('/:id', async (req, res) => {
     const { id } = req.params;
     const {
       libelle, type, date_acquisition, valeur_acquisition,
-      duree_amortissement, methode_amortissement, taux_amortissement, notes
+      duree_amortissement, methode_amortissement, taux_amortissement, 
+      valeur_residuelle, compte_immobilisation, compte_amortissement, en_service, notes
     } = req.body;
     
     const result = await pool.query(`
       UPDATE immobilisations 
-      SET designation = $1, categorie = $2, date_acquisition = $3, 
+      SET libelle = $1, type = $2, date_acquisition = $3, 
           valeur_acquisition = $4, duree_amortissement = $5,
-          methode_amortissement = $6, taux_amortissement = $7, notes = $8
-      WHERE id = $9
+          methode_amortissement = $6, taux_amortissement = $7, 
+          valeur_residuelle = $8, compte_immobilisation = $9,
+          compte_amortissement = $10, en_service = $11, notes = $12
+      WHERE id = $13
       RETURNING *
     `, [
       libelle, type, date_acquisition, valeur_acquisition,
-      duree_amortissement, methode_amortissement, taux_amortissement, notes, id
+      duree_amortissement, methode_amortissement, taux_amortissement, 
+      valeur_residuelle, compte_immobilisation, compte_amortissement, en_service, notes, id
     ]);
     
     if (result.rows.length === 0) {
@@ -202,13 +211,13 @@ router.get('/:id/amortissement/:annee', async (req, res) => {
     
     // Récupérer les amortissements précédents
     const previousResult = await pool.query(`
-      SELECT SUM(montant) as cumul
+      SELECT COALESCE(SUM(montant_amortissement), 0) as cumul
       FROM amortissements
       WHERE immobilisation_id = $1 AND annee < $2
     `, [id, annee]);
     
     const cumulPrecedent = parseFloat(previousResult.rows[0].cumul || 0);
-    const vncDebut = immo.valeur_acquisition - cumulPrecedent;
+    const vncDebut = parseFloat(immo.valeur_acquisition) - cumulPrecedent;
     
     let dotation;
     if (immo.methode_amortissement === 'lineaire') {
@@ -289,13 +298,13 @@ router.get('/par-categorie', async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT 
-        categorie,
+        type as categorie,
         COUNT(*) as nombre,
-        SUM(valeur_acquisition) as total_acquisition,
-        SUM(valeur_nette_comptable) as total_vnc
+        COALESCE(SUM(valeur_acquisition), 0) as total_acquisition,
+        COALESCE(SUM(valeur_acquisition - valeur_residuelle), 0) as total_vnc
       FROM immobilisations
       WHERE date_cession IS NULL
-      GROUP BY categorie
+      GROUP BY type
       ORDER BY total_acquisition DESC
     `);
     

@@ -29,16 +29,6 @@ class _DeclarationTVADetailScreenState extends State<DeclarationTVADetailScreen>
     return Scaffold(
       appBar: AppBar(
         title: Text('Déclaration ${_declaration.libellePeriode}'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: _editDeclaration,
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete),
-            onPressed: _deleteDeclaration,
-          ),
-        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -84,10 +74,15 @@ class _DeclarationTVADetailScreenState extends State<DeclarationTVADetailScreen>
         statutIcon = Icons.verified;
         statutLabel = 'Validée';
         break;
+      case 'brouillon':
+        statutColor = Colors.grey;
+        statutIcon = Icons.edit;
+        statutLabel = 'Brouillon';
+        break;
       default:
         statutColor = Colors.grey;
         statutIcon = Icons.pending;
-        statutLabel = 'En cours';
+        statutLabel = _declaration.statut;
     }
 
     return Card(
@@ -351,263 +346,31 @@ class _DeclarationTVADetailScreenState extends State<DeclarationTVADetailScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Actions',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.info_outline, color: Colors.blue),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Cette déclaration est en lecture seule. La modification des déclarations n\'est pas encore implémentée dans l\'API.',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.blue[900],
+                      ),
+                    ),
                   ),
+                ],
+              ),
             ),
-            const SizedBox(height: 16),
-            if (!_declaration.estValidee)
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  icon: const Icon(Icons.verified),
-                  label: const Text('Valider la déclaration'),
-                  onPressed: _validerDeclaration,
-                ),
-              ),
-            if (_declaration.estValidee && !_declaration.estTransmise) ...[
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  icon: const Icon(Icons.send),
-                  label: const Text('Marquer comme transmise'),
-                  onPressed: _marquerTransmise,
-                ),
-              ),
-            ],
-            if (_declaration.estTransmise && !_declaration.estPayee) ...[
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  icon: const Icon(Icons.payment),
-                  label: const Text('Marquer comme payée'),
-                  onPressed: _marquerPayee,
-                ),
-              ),
-            ],
           ],
         ),
       ),
     );
-  }
-
-  Future<void> _editDeclaration() async {
-    if (_declaration.estPayee) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Impossible de modifier une déclaration payée'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => DeclarationTVAFormScreen(declaration: _declaration),
-      ),
-    );
-
-    if (result == true && mounted) {
-      Navigator.pop(context, true);
-    }
-  }
-
-  Future<void> _deleteDeclaration() async {
-    if (_declaration.estValidee) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Impossible de supprimer une déclaration validée'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Confirmer la suppression'),
-        content: const Text('Voulez-vous vraiment supprimer cette déclaration ?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Annuler'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Supprimer'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true && mounted) {
-      setState(() => _isLoading = true);
-
-      try {
-        await _tvaService.deleteDeclaration(_declaration.id!);
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Déclaration supprimée'),
-              backgroundColor: Colors.green,
-            ),
-          );
-          Navigator.pop(context, true);
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Erreur: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      } finally {
-        if (mounted) {
-          setState(() => _isLoading = false);
-        }
-      }
-    }
-  }
-
-  Future<void> _validerDeclaration() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Valider la déclaration'),
-        content: const Text(
-          'Une fois validée, certaines informations ne pourront plus être modifiées. Continuer ?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Annuler'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Valider'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true && mounted) {
-      setState(() => _isLoading = true);
-
-      try {
-        await _tvaService.validerDeclaration(_declaration.id!);
-
-        setState(() {
-          _declaration = _declaration.copyWith(
-            statut: 'validee',
-          );
-        });
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Déclaration validée'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Erreur: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      } finally {
-        if (mounted) {
-          setState(() => _isLoading = false);
-        }
-      }
-    }
-  }
-
-  Future<void> _marquerTransmise() async {
-    setState(() => _isLoading = true);
-
-    try {
-      await _tvaService.marquerTransmise(_declaration.id!, DateTime.now());
-
-      setState(() {
-        _declaration = _declaration.copyWith(
-          statut: 'transmise',
-          dateTransmission: DateTime.now(),
-        );
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Déclaration marquée comme transmise'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-
-  Future<void> _marquerPayee() async {
-    setState(() => _isLoading = true);
-
-    try {
-      await _tvaService.marquerPayee(_declaration.id!, DateTime.now());
-
-      setState(() {
-        _declaration = _declaration.copyWith(
-          statut: 'payee',
-          datePaiement: DateTime.now(),
-        );
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Déclaration marquée comme payée'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
   }
 }

@@ -48,17 +48,17 @@ router.get('/calcul/:debut/:fin', async (req, res) => {
 // POST créer déclaration TVA
 router.post('/declarations', async (req, res) => {
   try {
-    const { periode_debut, periode_fin, tva_collectee, tva_deductible, statut, notes } = req.body;
+    const { periode_debut, periode_fin, tva_collectee, tva_deductible, statut } = req.body;
     
-    const tva_a_decaisser = tva_collectee - tva_deductible;
+    const tva_a_payer = tva_collectee - tva_deductible;
     
     const result = await pool.query(`
       INSERT INTO declarations_tva (
         periode_debut, periode_fin, tva_collectee, tva_deductible, 
-        tva_a_decaisser, statut, notes, date_creation
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)
+        tva_a_payer, statut
+      ) VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *
-    `, [periode_debut, periode_fin, tva_collectee, tva_deductible, tva_a_decaisser, statut || 'en_cours', notes]);
+    `, [periode_debut, periode_fin, tva_collectee, tva_deductible, tva_a_payer, statut || 'brouillon']);
     
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -71,17 +71,17 @@ router.post('/declarations', async (req, res) => {
 router.put('/declarations/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { periode_debut, periode_fin, tva_collectee, tva_deductible, notes } = req.body;
+    const { periode_debut, periode_fin, tva_collectee, tva_deductible } = req.body;
     
-    const tva_a_decaisser = tva_collectee - tva_deductible;
+    const tva_a_payer = tva_collectee - tva_deductible;
     
     const result = await pool.query(`
       UPDATE declarations_tva 
       SET periode_debut = $1, periode_fin = $2, tva_collectee = $3, 
-          tva_deductible = $4, tva_a_decaisser = $5, notes = $6
-      WHERE id = $7
+          tva_deductible = $4, tva_a_payer = $5
+      WHERE id = $6
       RETURNING *
-    `, [periode_debut, periode_fin, tva_collectee, tva_deductible, tva_a_decaisser, notes, id]);
+    `, [periode_debut, periode_fin, tva_collectee, tva_deductible, tva_a_payer, id]);
     
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Déclaration non trouvée' });
@@ -189,9 +189,9 @@ router.get('/statistiques', async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT 
-        SUM(tva_collectee) as total_collectee,
-        SUM(tva_deductible) as total_deductible,
-        SUM(tva_a_decaisser) as total_a_decaisser,
+        COALESCE(SUM(tva_collectee), 0) as total_collectee,
+        COALESCE(SUM(tva_deductible), 0) as total_deductible,
+        COALESCE(SUM(tva_a_payer), 0) as total_a_payer,
         COUNT(*) as nombre_declarations,
         COUNT(CASE WHEN statut = 'payee' THEN 1 END) as declarations_payees
       FROM declarations_tva

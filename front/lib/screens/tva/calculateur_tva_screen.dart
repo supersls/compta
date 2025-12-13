@@ -245,9 +245,10 @@ class _CalculateurTVAScreenState extends State<CalculateurTVAScreen> {
   }
 
   Widget _buildTauxDetail(Map<String, dynamic> detail) {
-    final taux = (detail['taux'] as num).toDouble();
-    final collectee = (detail['tva_collectee'] as num).toDouble();
-    final deductible = (detail['tva_deductible'] as num).toDouble();
+    // Backend returns string values, need to parse them
+    final taux = double.tryParse(detail['taux']?.toString() ?? '0') ?? 0;
+    final collectee = double.tryParse(detail['tva_collectee']?.toString() ?? '0') ?? 0;
+    final deductible = double.tryParse(detail['tva_deductible']?.toString() ?? '0') ?? 0;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
@@ -352,10 +353,27 @@ class _CalculateurTVAScreenState extends State<CalculateurTVAScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        FilledButton.icon(
-          icon: const Icon(Icons.add_circle),
-          label: const Text('Créer une déclaration depuis ce calcul'),
-          onPressed: _creerDeclaration,
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.blue.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.blue.withOpacity(0.3)),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.info_outline, color: Colors.blue),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Les données affichées sont calculées en temps réel depuis les factures enregistrées.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.blue[900],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: 12),
         OutlinedButton.icon(
@@ -441,13 +459,13 @@ class _CalculateurTVAScreenState extends State<CalculateurTVAScreen> {
 
       setState(() {
         _calculResult = result;
-        _detailParTaux = List<Map<String, dynamic>>.from(detail);
+        _detailParTaux = detail;
       });
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur: $e'),
+            content: Text('Erreur lors du calcul: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -459,31 +477,4 @@ class _CalculateurTVAScreenState extends State<CalculateurTVAScreen> {
     }
   }
 
-  Future<void> _creerDeclaration() async {
-    if (_calculResult == null) return;
-
-    final tvaCollectee = (_calculResult!['tva_collectee'] as num).toDouble();
-    final tvaDeductible = (_calculResult!['tva_deductible'] as num).toDouble();
-    final tvaADecaisser = (_calculResult!['tva_a_decaisser'] as num).toDouble();
-
-    final declaration = DeclarationTVA(
-      periodeDebut: _periodeDebut,
-      periodeFin: _periodeFin,
-      tvaCollectee: tvaCollectee,
-      tvaDeductible: tvaDeductible,
-      tvaADecaisser: tvaADecaisser,
-      statut: 'en_cours',
-    );
-
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => DeclarationTVAFormScreen(declaration: declaration),
-      ),
-    );
-
-    if (result == true && mounted) {
-      Navigator.pop(context, true);
-    }
-  }
 }
