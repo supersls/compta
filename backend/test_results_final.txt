@@ -1,0 +1,203 @@
+==========================================
+    COMPTA EI - API INTEGRATION TESTS
+==========================================
+
+[1;33mWaiting for backend to be ready...[0m
+[0;32mBackend is ready![0m
+
+[0;34m========== HEALTH CHECK ==========[0m
+[0;34m[Test 1][0m GET /health - Health check
+[0;32m✓ PASS[0m (HTTP 200)
+[1;33mResponse:[0m {"status":"OK","timestamp":"2025-12-13T18:18:21.868Z"}
+
+[0;34m========== FACTURES ENDPOINTS ==========[0m
+[0;34m[Test 2][0m GET /factures - Get all invoices
+[0;32m✓ PASS[0m (HTTP 200)
+[1;33mResponse:[0m [{"id":28,"numero":"FAC-TEST-001","type":"vente","date_emission":"2025-12-13T00:00:00.000Z","date_echeance":"2026-01-13T00:00:00.000Z","client_fournisseur":"Test Client","siret_client":null,"montant_h...
+
+[0;34m[Test 3][0m GET /factures/stats/overview - Get invoice statistics
+[0;32m✓ PASS[0m (HTTP 200)
+[1;33mResponse:[0m {"totalVentes":287935.08,"totalAchats":0,"totalImpayees":36019.2,"countImpayees":4,"countRetard":2,"countVentes":0}
+
+[0;34m[Test 4][0m GET /factures/type/vente - Get sales invoices
+[0;32m✓ PASS[0m (HTTP 200)
+[1;33mResponse:[0m [{"id":28,"numero":"FAC-TEST-001","type":"vente","date_emission":"2025-12-13T00:00:00.000Z","date_echeance":"2026-01-13T00:00:00.000Z","client_fournisseur":"Test Client","siret_client":null,"montant_h...
+
+[0;34m[Test 5][0m GET /factures/type/achat - Get purchase invoices
+[0;32m✓ PASS[0m (HTTP 200)
+[1;33mResponse:[0m []
+
+[0;34m[Test 6][0m GET /factures/statut/payee - Get paid invoices
+[0;32m✓ PASS[0m (HTTP 200)
+[1;33mResponse:[0m [{"id":3,"numero":"FAC-2025-003","type":"vente","date_emission":"2025-09-30T00:00:00.000Z","date_echeance":"2025-10-30T00:00:00.000Z","client_fournisseur":"ITERA","siret_client":null,"montant_ht":"118...
+
+[0;34m[Test 7][0m GET /factures/statut/en_attente - Get pending invoices
+[0;32m✓ PASS[0m (HTTP 200)
+[1;33mResponse:[0m [{"id":28,"numero":"FAC-TEST-001","type":"vente","date_emission":"2025-12-13T00:00:00.000Z","date_echeance":"2026-01-13T00:00:00.000Z","client_fournisseur":"Test Client","siret_client":null,"montant_h...
+
+[0;34m[Test 8][0m GET /factures/filter/retard - Get overdue invoices
+[0;32m✓ PASS[0m (HTTP 200)
+[1;33mResponse:[0m [{"id":10,"numero":"FAC-2025-010","type":"vente","date_emission":"2025-02-28T00:00:00.000Z","date_echeance":"2025-03-30T00:00:00.000Z","client_fournisseur":"ITERA","siret_client":null,"montant_ht":"95...
+
+[0;34m[Test 9][0m GET /factures/28 - Get invoice by ID
+[0;32m✓ PASS[0m (HTTP 200)
+[1;33mResponse:[0m {"id":28,"numero":"FAC-TEST-001","type":"vente","date_emission":"2025-12-13T00:00:00.000Z","date_echeance":"2026-01-13T00:00:00.000Z","client_fournisseur":"Test Client","siret_client":null,"montant_ht":"1000.00","montant_tva":"200.00","montant_ttc":"1200.00","statut":"en_attente","montant_paye":"0.00","reste_a_payer":"1200.00","categorie":null,"notes":null,"created_at":"2025-12-13T18:04:46.990Z","updated_at":"2025-12-13T18:04:46.990Z","taux_tva":"20.00"}
+
+[0;34m[Test 10][0m POST /factures/search - Search invoices
+[0;32m✓ PASS[0m (HTTP 200)
+[1;33mResponse:[0m [{"id":28,"numero":"FAC-TEST-001","type":"vente","date_emission":"2025-12-13T00:00:00.000Z","date_echeance":"2026-01-13T00:00:00.000Z","client_fournisseur":"Test Client","siret_client":null,"montant_ht":"1000.00","montant_tva":"200.00","montant_ttc":"1200.00","statut":"en_attente","montant_paye":"0.00","reste_a_payer":"1200.00","categorie":null,"notes":null,"created_at":"2025-12-13T18:04:46.990Z","updated_at":"2025-12-13T18:04:46.990Z","taux_tva":"20.00"}]
+
+[0;34m[Test 11][0m POST /factures/generer-numero - Generate invoice number
+[0;32m✓ PASS[0m (HTTP 200)
+[1;33mResponse:[0m {"numero":"FAC-2025-0014"}
+
+[0;34m[Test 12][0m GET /factures/periode/2025-01-01/2025-12-31 - Get invoices by period
+[0;32m✓ PASS[0m (HTTP 200)
+[1;33mResponse:[0m [{"id":28,"numero":"FAC-TEST-001","type":"vente","date_emission":"2025-12-13T00:00:00.000Z","date_echeance":"2026-01-13T00:00:00.000Z","client_fournisseur":"Test Client","siret_client":null,"montant_h...
+
+[0;34m========== TVA ENDPOINTS ==========[0m
+[0;34m[Test 13][0m GET /tva/declarations - Get all TVA declarations
+[0;32m✓ PASS[0m (HTTP 200)
+[1;33mResponse:[0m [{"id":1,"periode_debut":"2025-01-01T00:00:00.000Z","periode_fin":"2025-03-31T00:00:00.000Z","tva_collectee":"5000.00","tva_deductible":"1000.00","tva_a_payer":"4000.00","statut":"brouillon","date_dec...
+
+[0;34m[Test 14][0m GET /tva/calcul/2025-01-01/2025-12-13 - Calculate TVA for period
+[0;32m✓ PASS[0m (HTTP 200)
+[1;33mResponse:[0m {"tvaCollectee":24604.4,"tvaDeductible":0,"tvaADecaisser":24604.4,"periodeDebut":"2025-01-01","periodeFin":"2025-12-13"}
+
+[0;34m[Test 15][0m GET /tva/statistiques - Get TVA statistics
+[0;32m✓ PASS[0m (HTTP 200)
+[1;33mResponse:[0m {"total_collectee":"35000.00","total_deductible":"7000.00","total_a_payer":"28000.00","nombre_declarations":"7","declarations_payees":"0"}
+
+[0;34m[Test 16][0m GET /tva/detail-taux/2025-01-01/2025-12-31 - Get TVA detail by rate
+[0;32m✓ PASS[0m (HTTP 200)
+[1;33mResponse:[0m [{"taux":"20.00","tva_collectee":"24604.40","tva_deductible":"0"}]
+
+[0;34m========== BANQUE ENDPOINTS ==========[0m
+[0;34m[Test 17][0m GET /banque/comptes - Get all bank accounts
+[0;32m✓ PASS[0m (HTTP 200)
+[1;33mResponse:[0m [{"id":1,"nom":"Compte Test Updated","banque":"Banque Test","numero_compte":"12345678901","iban":"FR7630006000011234567890189","solde_initial":"10000.00","solde_actuel":"10000.00","date_ouverture":nul...
+
+[0;34m[Test 18][0m GET /banque/transactions - Get all transactions
+[0;32m✓ PASS[0m (HTTP 200)
+[1;33mResponse:[0m []
+
+[0;34m[Test 19][0m GET /banque/statistiques - Get bank statistics
+[0;32m✓ PASS[0m (HTTP 200)
+[1;33mResponse:[0m {"solde_total":"40000.00","nombre_comptes":"8","nombre_transactions":"0"}
+
+[0;34m[Test 20][0m POST /banque/comptes - Create bank account
+[0;32m✓ PASS[0m (HTTP 201)
+[1;33mResponse:[0m {"id":9,"nom":"Compte Test","banque":"Banque Test","numero_compte":"12345678901","iban":"FR7630006000011234567890189","solde_initial":"10000.00","solde_actuel":"10000.00","date_ouverture":null,"actif":true,"created_at":"2025-12-13T18:18:24.490Z"}
+
+[0;34m[Test 21][0m GET /banque/comptes/9/statistiques - Get account statistics
+[0;32m✓ PASS[0m (HTTP 200)
+[1;33mResponse:[0m {"total_credits":"0","total_debits":"0","nombre_transactions":"0","nombre_rapprochees":"0"}
+
+[0;34m[Test 22][0m GET /banque/comptes/9/transactions - Get account transactions
+[0;32m✓ PASS[0m (HTTP 200)
+[1;33mResponse:[0m []
+
+[0;34m[Test 23][0m GET /banque/comptes/9/non-rapprochees - Get unreconciled transactions
+[0;32m✓ PASS[0m (HTTP 200)
+[1;33mResponse:[0m []
+
+[0;34m[Test 24][0m PUT /banque/comptes/9 - Update bank account
+[0;32m✓ PASS[0m (HTTP 200)
+[1;33mResponse:[0m {"id":9,"nom":"Compte Test Updated","banque":"Banque Test","numero_compte":"12345678901","iban":"FR7630006000011234567890189","solde_initial":"10000.00","solde_actuel":"10000.00","date_ouverture":null,"actif":true,"created_at":"2025-12-13T18:18:24.490Z"}
+
+[0;34m[Test 25][0m POST /banque/transactions - Create transaction
+[0;32m✓ PASS[0m (HTTP 201)
+[1;33mResponse:[0m {"id":8,"compte_bancaire_id":9,"date_transaction":"2025-12-13T00:00:00.000Z","date_valeur":"2025-12-13T00:00:00.000Z","libelle":"Test Transaction","debit":"0.00","credit":"1000.00","solde":"11000.00","categorie":null,"rapproche":false,"facture_id":null,"ecriture_id":null,"notes":null,"created_at":"2025-12-13T18:18:25.150Z"}
+
+[0;34m[Test 26][0m PUT /banque/transactions/8 - Update transaction
+[0;32m✓ PASS[0m (HTTP 200)
+[1;33mResponse:[0m {"id":8,"compte_bancaire_id":9,"date_transaction":"2025-12-13T00:00:00.000Z","date_valeur":"2025-12-13T00:00:00.000Z","libelle":"Test Transaction Updated","debit":"0.00","credit":"1500.00","solde":"11500.00","categorie":null,"rapproche":false,"facture_id":null,"ecriture_id":null,"notes":null,"created_at":"2025-12-13T18:18:25.150Z"}
+
+[0;34m[Test 27][0m PATCH /banque/transactions/8/rapprocher - Reconcile transaction
+[0;32m✓ PASS[0m (HTTP 200)
+[1;33mResponse:[0m {"id":8,"compte_bancaire_id":9,"date_transaction":"2025-12-13T00:00:00.000Z","date_valeur":"2025-12-13T00:00:00.000Z","libelle":"Test Transaction Updated","debit":"0.00","credit":"1500.00","solde":"11500.00","categorie":null,"rapproche":true,"facture_id":null,"ecriture_id":null,"notes":null,"created_at":"2025-12-13T18:18:25.150Z"}
+
+[0;34m[Test 28][0m DELETE /banque/transactions/8 - Delete transaction
+[0;32m✓ PASS[0m (HTTP 200)
+[1;33mResponse:[0m {"message":"Transaction supprimée avec succès"}
+
+[0;34m========== IMMOBILISATIONS ENDPOINTS ==========[0m
+[0;34m[Test 29][0m GET /immobilisations - Get all fixed assets
+[0;32m✓ PASS[0m (HTTP 200)
+[1;33mResponse:[0m []
+
+[0;34m[Test 30][0m GET /immobilisations/statistiques - Get immobilisations statistics
+[0;32m✓ PASS[0m (HTTP 200)
+[1;33mResponse:[0m {"totalAcquisition":0,"totalAmortissable":0,"nombreImmobilisations":0,"actives":0,"cedees":0}
+
+[0;34m[Test 31][0m GET /immobilisations/par-categorie - Get immobilisations by category
+[0;32m✓ PASS[0m (HTTP 200)
+[1;33mResponse:[0m []
+
+[0;34m[Test 32][0m GET /immobilisations/amortissements - Get all depreciations
+[0;32m✓ PASS[0m (HTTP 200)
+[1;33mResponse:[0m []
+
+[0;34m[Test 33][0m POST /immobilisations - Create fixed asset
+[0;32m✓ PASS[0m (HTTP 201)
+[1;33mResponse:[0m {"id":8,"libelle":"Test Asset","type":"Materiel informatique","date_acquisition":"2025-01-01T00:00:00.000Z","valeur_acquisition":"5000.00","duree_amortissement":5,"methode_amortissement":"lineaire","taux_amortissement":"20.00","valeur_residuelle":"0.00","compte_immobilisation":"2183","compte_amortissement":"28183","en_service":true,"date_cession":null,"notes":null,"created_at":"2025-12-13T18:18:26.230Z"}
+
+[0;34m[Test 34][0m PUT /immobilisations/8 - Update fixed asset
+[0;32m✓ PASS[0m (HTTP 200)
+[1;33mResponse:[0m {"id":8,"libelle":"Test Asset Updated","type":"Materiel informatique","date_acquisition":"2025-01-01T00:00:00.000Z","valeur_acquisition":"6000.00","duree_amortissement":5,"methode_amortissement":"lineaire","taux_amortissement":"20.00","valeur_residuelle":"0.00","compte_immobilisation":"2183","compte_amortissement":"28183","en_service":true,"date_cession":null,"notes":null,"created_at":"2025-12-13T18:18:26.230Z"}
+
+[0;34m[Test 35][0m GET /immobilisations/8/amortissements - Get asset depreciations
+[0;32m✓ PASS[0m (HTTP 200)
+[1;33mResponse:[0m []
+
+[0;34m[Test 36][0m GET /immobilisations/8/amortissement/2025 - Calculate depreciation for year
+[0;32m✓ PASS[0m (HTTP 200)
+[1;33mResponse:[0m {"immobilisation_id":8,"annee":2025,"montant":1200,"valeur_nette_comptable":4800}
+
+[0;34m[Test 37][0m DELETE /immobilisations/8 - Delete fixed asset
+[0;32m✓ PASS[0m (HTTP 200)
+[1;33mResponse:[0m {"message":"Immobilisation supprimée avec succès"}
+
+[0;34m========== DOCUMENTS COMPTABLES ENDPOINTS ==========[0m
+[0;34m[Test 38][0m GET /documents/journal?dateDebut=2025-01-01&dateFin=2025-12-31 - Get journal comptable
+[0;32m✓ PASS[0m (HTTP 200)
+[1;33mResponse:[0m []
+
+[0;34m[Test 39][0m GET /documents/grand-livre?dateDebut=2025-01-01&dateFin=2025-12-31 - Get grand livre
+[0;32m✓ PASS[0m (HTTP 200)
+[1;33mResponse:[0m []
+
+[0;34m[Test 40][0m GET /documents/bilan?date=2025-12-31 - Get balance sheet
+[0;32m✓ PASS[0m (HTTP 200)
+[1;33mResponse:[0m {"date_arrete":"2025-12-31","actif":{},"passif":{},"total_actif":0,"total_passif":0,"resultat":0}
+
+[0;34m[Test 41][0m GET /documents/compte-resultat?dateDebut=2025-01-01&dateFin=2025-12-31 - Get income statement
+[0;32m✓ PASS[0m (HTTP 200)
+[1;33mResponse:[0m {"periode_debut":"2025-01-01","periode_fin":"2025-12-31","charges":{},"produits":{},"total_charges":0,"total_produits":0,"resultat_net":0}
+
+[0;34m[Test 42][0m GET /documents/balance?debut=2025-01-01&fin=2025-12-31 - Get balance des comptes
+[0;32m✓ PASS[0m (HTTP 200)
+[1;33mResponse:[0m []
+
+[0;34m========== ENTREPRISE ENDPOINTS ==========[0m
+[0;34m[Test 43][0m GET /entreprise - Get company info
+[0;32m✓ PASS[0m (HTTP 200)
+[1;33mResponse:[0m {"id":1,"nom":"Mon Entreprise","siret":"12345678901234","adresse":"1 Rue de la Comptabilité","code_postal":"75001","ville":"Paris","email":"contact@monentreprise.fr","telephone":"0123456789","regime_tva":"reel_normal","date_cloture_exercice":"2025-12-31T00:00:00.000Z","created_at":"2025-12-13T17:25:22.701Z"}
+
+[0;34m========== COMPTABILITE ENDPOINTS ==========[0m
+[0;34m[Test 44][0m GET /comptabilite/comptes - Get accounting plan
+[0;32m✓ PASS[0m (HTTP 200)
+[1;33mResponse:[0m [{"numero":"101","libelle":"Capital","classe":1,"type":"passif"},{"numero":"120","libelle":"Résultat de l'exercice","classe":1,"type":"passif"},{"numero":"164","libelle":"Emprunts","classe":1,"type":...
+
+[0;34m[Test 45][0m GET /comptabilite/plan-comptable - Get plan comptable (alias)
+[0;32m✓ PASS[0m (HTTP 200)
+[1;33mResponse:[0m [{"numero":"101","libelle":"Capital","classe":1,"type":"passif"},{"numero":"120","libelle":"Résultat de l'exercice","classe":1,"type":"passif"},{"numero":"164","libelle":"Emprunts","classe":1,"type":...
+
+
+==========================================
+           TEST SUMMARY
+==========================================
+Total Tests:  [0;34m45[0m
+Passed:       [0;32m45[0m
+Failed:       [0;31m0[0m
+[0;32m✓ All tests passed![0m

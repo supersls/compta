@@ -1,8 +1,8 @@
 openapi: 3.0.0
 info:
   title: Compta EI API
-  description: API REST pour la gestion comptable d'une Entreprise Individuelle
-  version: 1.0.0
+  description: API REST pour la gestion comptable d'une Entreprise Individuelle - 45 endpoints testés et fonctionnels
+  version: 2.0.0
   contact:
     name: Compta EI
     email: contact@monentreprise.fr
@@ -86,24 +86,18 @@ paths:
                   totalVentes:
                     type: number
                     format: float
-                    example: 286735.08
                   totalAchats:
                     type: number
                     format: float
-                    example: 0
                   totalImpayees:
                     type: number
                     format: float
-                    example: 34819.2
                   countImpayees:
                     type: integer
-                    example: 3
                   countRetard:
                     type: integer
-                    example: 2
                   countVentes:
                     type: integer
-                    example: 27
 
   /factures/type/{type}:
     get:
@@ -140,7 +134,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [en_attente, payee, partiellement_payee, en_retard]
+            enum: [en_attente, payee, partiellement_payee, annulee]
       responses:
         '200':
           description: Liste des factures avec le statut spécifié
@@ -160,6 +154,114 @@ paths:
       responses:
         '200':
           description: Liste des factures en retard
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Facture'
+
+  /factures/{id}:
+    get:
+      tags:
+        - Factures
+      summary: Get invoice by ID
+      description: Récupère une facture par son ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Détails de la facture
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Facture'
+        '404':
+          description: Facture non trouvée
+
+  /factures/search:
+    post:
+      tags:
+        - Factures
+      summary: Search invoices
+      description: Recherche de factures par critères
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query:
+                  type: string
+                  example: "Client"
+      responses:
+        '200':
+          description: Résultats de la recherche
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Facture'
+
+  /factures/generer-numero:
+    post:
+      tags:
+        - Factures
+      summary: Generate invoice number
+      description: Génère un nouveau numéro de facture
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  enum: [vente, achat]
+                  example: "vente"
+      responses:
+        '200':
+          description: Numéro de facture généré
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  numero:
+                    type: string
+                    example: "FAC-2025-0014"
+
+  /factures/periode/{debut}/{fin}:
+    get:
+      tags:
+        - Factures
+      summary: Get invoices by period
+      description: Récupère les factures pour une période donnée
+      parameters:
+        - name: debut
+          in: path
+          required: true
+          schema:
+            type: string
+            format: date
+          example: '2025-01-01'
+        - name: fin
+          in: path
+          required: true
+          schema:
+            type: string
+            format: date
+          example: '2025-12-31'
+      responses:
+        '200':
+          description: Liste des factures de la période
           content:
             application/json:
               schema:
@@ -215,21 +317,81 @@ paths:
                   tvaCollectee:
                     type: number
                     format: float
-                    example: 24404.4
                   tvaDeductible:
                     type: number
                     format: float
-                    example: 0
                   tvaADecaisser:
                     type: number
                     format: float
-                    example: 24404.4
                   periodeDebut:
                     type: string
                     format: date
                   periodeFin:
                     type: string
                     format: date
+
+  /tva/statistiques:
+    get:
+      tags:
+        - TVA
+      summary: Get TVA statistics
+      description: Statistiques globales de la TVA
+      responses:
+        '200':
+          description: Statistiques TVA
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_collectee:
+                    type: string
+                  total_deductible:
+                    type: string
+                  total_a_payer:
+                    type: string
+                  nombre_declarations:
+                    type: string
+                  declarations_payees:
+                    type: string
+
+  /tva/detail-taux/{debut}/{fin}:
+    get:
+      tags:
+        - TVA
+      summary: Get TVA detail by rate
+      description: Détail de la TVA par taux pour une période
+      parameters:
+        - name: debut
+          in: path
+          required: true
+          schema:
+            type: string
+            format: date
+          example: '2025-01-01'
+        - name: fin
+          in: path
+          required: true
+          schema:
+            type: string
+            format: date
+          example: '2025-12-31'
+      responses:
+        '200':
+          description: Détail TVA par taux
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    taux:
+                      type: string
+                    tva_collectee:
+                      type: string
+                    tva_deductible:
+                      type: string
 
   /banque/comptes:
     get:
@@ -246,6 +408,123 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/CompteBancaire'
+    post:
+      tags:
+        - Banque
+      summary: Create bank account
+      description: Crée un nouveau compte bancaire
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompteBancaireInput'
+      responses:
+        '201':
+          description: Compte bancaire créé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompteBancaire'
+
+  /banque/comptes/{id}:
+    put:
+      tags:
+        - Banque
+      summary: Update bank account
+      description: Met à jour un compte bancaire
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompteBancaireInput'
+      responses:
+        '200':
+          description: Compte bancaire mis à jour
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompteBancaire'
+
+  /banque/comptes/{id}/statistiques:
+    get:
+      tags:
+        - Banque
+      summary: Get account statistics
+      description: Statistiques d'un compte bancaire
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Statistiques du compte
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_credits:
+                    type: string
+                  total_debits:
+                    type: string
+                  nombre_transactions:
+                    type: string
+                  nombre_rapprochees:
+                    type: string
+
+  /banque/comptes/{id}/transactions:
+    get:
+      tags:
+        - Banque
+      summary: Get account transactions
+      description: Récupère les transactions d'un compte
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Liste des transactions du compte
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TransactionBancaire'
+
+  /banque/comptes/{id}/non-rapprochees:
+    get:
+      tags:
+        - Banque
+      summary: Get unreconciled transactions
+      description: Récupère les transactions non rapprochées d'un compte
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Liste des transactions non rapprochées
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TransactionBancaire'
 
   /banque/transactions:
     get:
@@ -262,13 +541,105 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/TransactionBancaire'
+    post:
+      tags:
+        - Banque
+      summary: Create transaction
+      description: Crée une nouvelle transaction bancaire
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionBancaireInput'
+      responses:
+        '201':
+          description: Transaction créée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionBancaire'
+
+  /banque/transactions/{id}:
+    put:
+      tags:
+        - Banque
+      summary: Update transaction
+      description: Met à jour une transaction bancaire
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionBancaireInput'
+      responses:
+        '200':
+          description: Transaction mise à jour
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionBancaire'
+    delete:
+      tags:
+        - Banque
+      summary: Delete transaction
+      description: Supprime une transaction bancaire
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Transaction supprimée
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Transaction supprimée avec succès"
+
+  /banque/transactions/{id}/rapprocher:
+    patch:
+      tags:
+        - Banque
+      summary: Reconcile transaction
+      description: Rapproche une transaction bancaire
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Transaction rapprochée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionBancaire'
 
   /banque/statistiques:
     get:
       tags:
         - Banque
       summary: Get bank statistics
-      description: Statistiques des comptes bancaires
+      description: Statistiques globales des comptes bancaires
       responses:
         '200':
           description: Statistiques bancaires
@@ -277,24 +648,12 @@ paths:
               schema:
                 type: object
                 properties:
-                  nombreComptes:
-                    type: integer
-                    example: 0
-                  totalSoldes:
-                    type: number
-                    format: float
-                    example: 0
-                  nombreTransactions:
-                    type: integer
-                    example: 0
-                  totalCredits:
-                    type: number
-                    format: float
-                    example: 0
-                  totalDebits:
-                    type: number
-                    format: float
-                    example: 0
+                  solde_total:
+                    type: string
+                  nombre_comptes:
+                    type: string
+                  nombre_transactions:
+                    type: string
 
   /immobilisations:
     get:
@@ -311,6 +670,129 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Immobilisation'
+    post:
+      tags:
+        - Immobilisations
+      summary: Create fixed asset
+      description: Crée une nouvelle immobilisation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImmobilisationInput'
+      responses:
+        '201':
+          description: Immobilisation créée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Immobilisation'
+
+  /immobilisations/{id}:
+    put:
+      tags:
+        - Immobilisations
+      summary: Update fixed asset
+      description: Met à jour une immobilisation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImmobilisationInput'
+      responses:
+        '200':
+          description: Immobilisation mise à jour
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Immobilisation'
+    delete:
+      tags:
+        - Immobilisations
+      summary: Delete fixed asset
+      description: Supprime une immobilisation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Immobilisation supprimée
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Immobilisation supprimée avec succès"
+
+  /immobilisations/{id}/amortissements:
+    get:
+      tags:
+        - Immobilisations
+      summary: Get asset depreciations
+      description: Récupère les amortissements d'une immobilisation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Liste des amortissements
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Amortissement'
+
+  /immobilisations/{id}/amortissement/{annee}:
+    get:
+      tags:
+        - Immobilisations
+      summary: Calculate depreciation for year
+      description: Calcule l'amortissement pour une année donnée
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: annee
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 2025
+      responses:
+        '200':
+          description: Calcul de l'amortissement
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  immobilisation_id:
+                    type: integer
+                  annee:
+                    type: integer
+                  montant:
+                    type: number
+                  valeur_nette_comptable:
+                    type: number
 
   /immobilisations/statistiques:
     get:
@@ -328,21 +810,46 @@ paths:
                 properties:
                   totalAcquisition:
                     type: number
-                    format: float
-                    example: 0
                   totalAmortissable:
                     type: number
-                    format: float
-                    example: 0
                   nombreImmobilisations:
                     type: integer
-                    example: 0
                   actives:
                     type: integer
-                    example: 0
                   cedees:
                     type: integer
-                    example: 0
+
+  /immobilisations/par-categorie:
+    get:
+      tags:
+        - Immobilisations
+      summary: Get immobilisations by category
+      description: Récupère les immobilisations regroupées par catégorie
+      responses:
+        '200':
+          description: Immobilisations par catégorie
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+  /immobilisations/amortissements:
+    get:
+      tags:
+        - Immobilisations
+      summary: Get all depreciations
+      description: Récupère tous les amortissements
+      responses:
+        '200':
+          description: Liste des amortissements
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Amortissement'
 
   /documents/journal:
     get:
@@ -404,14 +911,14 @@ paths:
               schema:
                 type: array
                 items:
-                  type: object
+                  $ref: '#/components/schemas/EcritureComptable'
 
   /documents/bilan:
     get:
       tags:
         - Documents
       summary: Get balance sheet
-      description: Génère le bilan comptable à une date donnée
+      description: Génère le bilan à une date donnée
       parameters:
         - name: date
           in: query
@@ -422,7 +929,7 @@ paths:
           example: '2025-12-31'
       responses:
         '200':
-          description: Bilan comptable
+          description: Bilan
           content:
             application/json:
               schema:
@@ -437,13 +944,10 @@ paths:
                     type: object
                   total_actif:
                     type: number
-                    format: float
                   total_passif:
                     type: number
-                    format: float
                   resultat:
                     type: number
-                    format: float
 
   /documents/compte-resultat:
     get:
@@ -486,13 +990,41 @@ paths:
                     type: object
                   total_charges:
                     type: number
-                    format: float
                   total_produits:
                     type: number
-                    format: float
                   resultat_net:
                     type: number
-                    format: float
+
+  /documents/balance:
+    get:
+      tags:
+        - Documents
+      summary: Get balance des comptes
+      description: Génère la balance des comptes pour une période
+      parameters:
+        - name: debut
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          example: '2025-01-01'
+        - name: fin
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          example: '2025-12-31'
+      responses:
+        '200':
+          description: Balance des comptes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
 
   /entreprise:
     get:
@@ -507,15 +1039,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Entreprise'
-        '404':
-          description: Informations entreprise non trouvées
 
   /comptabilite/comptes:
     get:
       tags:
         - Comptabilité
       summary: Get accounting plan
-      description: Récupère le plan comptable (PCG)
+      description: Récupère le plan comptable
       responses:
         '200':
           description: Plan comptable
@@ -524,7 +1054,23 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ComptePCG'
+                  $ref: '#/components/schemas/CompteComptable'
+
+  /comptabilite/plan-comptable:
+    get:
+      tags:
+        - Comptabilité
+      summary: Get plan comptable (alias)
+      description: Alias pour récupérer le plan comptable
+      responses:
+        '200':
+          description: Plan comptable
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CompteComptable'
 
 components:
   schemas:
@@ -533,12 +1079,14 @@ components:
       properties:
         id:
           type: integer
+          example: 1
         numero:
           type: string
-          example: 'FAC-2025-001'
+          example: "FAC-2025-0001"
         type:
           type: string
           enum: [vente, achat]
+          example: "vente"
         date_emission:
           type: string
           format: date-time
@@ -547,27 +1095,32 @@ components:
           format: date-time
         client_fournisseur:
           type: string
+          example: "Client Test"
         siret_client:
           type: string
           nullable: true
         montant_ht:
-          type: number
-          format: float
+          type: string
+          example: "1000.00"
         montant_tva:
-          type: number
-          format: float
+          type: string
+          example: "200.00"
         montant_ttc:
-          type: number
-          format: float
+          type: string
+          example: "1200.00"
+        taux_tva:
+          type: string
+          example: "20.00"
         statut:
           type: string
-          enum: [en_attente, payee, partiellement_payee, en_retard]
+          enum: [en_attente, payee, partiellement_payee, annulee]
+          example: "en_attente"
         montant_paye:
-          type: number
-          format: float
+          type: string
+          example: "0.00"
         reste_a_payer:
-          type: number
-          format: float
+          type: string
+          example: "1200.00"
         categorie:
           type: string
           nullable: true
@@ -588,29 +1141,26 @@ components:
           type: integer
         periode_debut:
           type: string
-          format: date
+          format: date-time
         periode_fin:
           type: string
-          format: date
+          format: date-time
         tva_collectee:
-          type: number
-          format: float
+          type: string
         tva_deductible:
-          type: number
-          format: float
+          type: string
         tva_a_payer:
-          type: number
-          format: float
+          type: string
         statut:
           type: string
-          enum: [brouillon, declaree, payee]
+          enum: [brouillon, validee, transmise, payee]
         date_declaration:
           type: string
-          format: date
+          format: date-time
           nullable: true
         date_paiement:
           type: string
-          format: date
+          format: date-time
           nullable: true
         created_at:
           type: string
@@ -623,6 +1173,39 @@ components:
           type: integer
         nom:
           type: string
+          example: "Compte Principal"
+        banque:
+          type: string
+          example: "Banque Test"
+        numero_compte:
+          type: string
+          example: "12345678901"
+        iban:
+          type: string
+          example: "FR7630006000011234567890189"
+        solde_initial:
+          type: string
+        solde_actuel:
+          type: string
+        date_ouverture:
+          type: string
+          format: date
+          nullable: true
+        actif:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    CompteBancaireInput:
+      type: object
+      required:
+        - nom
+        - banque
+        - numero_compte
+      properties:
+        nom:
+          type: string
         banque:
           type: string
         numero_compte:
@@ -631,18 +1214,13 @@ components:
           type: string
         solde_initial:
           type: number
-          format: float
         solde_actuel:
           type: number
-          format: float
         date_ouverture:
           type: string
           format: date
         actif:
           type: boolean
-        created_at:
-          type: string
-          format: date-time
 
     TransactionBancaire:
       type: object
@@ -653,28 +1231,27 @@ components:
           type: integer
         date_transaction:
           type: string
-          format: date
+          format: date-time
         date_valeur:
           type: string
-          format: date
-          nullable: true
+          format: date-time
         libelle:
           type: string
         debit:
-          type: number
-          format: float
+          type: string
         credit:
-          type: number
-          format: float
+          type: string
         solde:
-          type: number
-          format: float
+          type: string
         categorie:
           type: string
           nullable: true
         rapproche:
           type: boolean
         facture_id:
+          type: integer
+          nullable: true
+        ecriture_id:
           type: integer
           nullable: true
         notes:
@@ -684,11 +1261,94 @@ components:
           type: string
           format: date-time
 
+    TransactionBancaireInput:
+      type: object
+      required:
+        - compte_bancaire_id
+        - date_transaction
+        - libelle
+      properties:
+        compte_bancaire_id:
+          type: integer
+        date_transaction:
+          type: string
+          format: date
+        date_valeur:
+          type: string
+          format: date
+        libelle:
+          type: string
+        debit:
+          type: number
+          default: 0
+        credit:
+          type: number
+          default: 0
+        solde:
+          type: number
+        categorie:
+          type: string
+        rapproche:
+          type: boolean
+          default: false
+        facture_id:
+          type: integer
+        ecriture_id:
+          type: integer
+        notes:
+          type: string
+
     Immobilisation:
       type: object
       properties:
         id:
           type: integer
+        libelle:
+          type: string
+          example: "Ordinateur portable"
+        type:
+          type: string
+          example: "Materiel informatique"
+        date_acquisition:
+          type: string
+          format: date-time
+        valeur_acquisition:
+          type: string
+        duree_amortissement:
+          type: integer
+        methode_amortissement:
+          type: string
+          enum: [lineaire, degressif]
+        taux_amortissement:
+          type: string
+        valeur_residuelle:
+          type: string
+        compte_immobilisation:
+          type: string
+        compte_amortissement:
+          type: string
+        en_service:
+          type: boolean
+        date_cession:
+          type: string
+          format: date-time
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    ImmobilisationInput:
+      type: object
+      required:
+        - libelle
+        - type
+        - date_acquisition
+        - valeur_acquisition
+        - duree_amortissement
+      properties:
         libelle:
           type: string
         type:
@@ -698,30 +1358,44 @@ components:
           format: date
         valeur_acquisition:
           type: number
-          format: float
         duree_amortissement:
           type: integer
         methode_amortissement:
           type: string
           enum: [lineaire, degressif]
+          default: lineaire
         taux_amortissement:
           type: number
-          format: float
         valeur_residuelle:
           type: number
-          format: float
+          default: 0
         compte_immobilisation:
           type: string
         compte_amortissement:
           type: string
         en_service:
           type: boolean
-        date_cession:
-          type: string
-          format: date
-          nullable: true
+          default: true
         notes:
           type: string
+
+    Amortissement:
+      type: object
+      properties:
+        id:
+          type: integer
+        immobilisation_id:
+          type: integer
+        annee:
+          type: integer
+        montant_amortissement:
+          type: string
+        amortissement_cumule:
+          type: string
+        valeur_nette_comptable:
+          type: string
+        ecriture_id:
+          type: integer
           nullable: true
         created_at:
           type: string
@@ -732,37 +1406,22 @@ components:
       properties:
         id:
           type: integer
-        numero_piece:
-          type: string
         date_ecriture:
           type: string
           format: date
-        journal:
-          type: string
-        compte:
+        numero_piece:
           type: string
         libelle:
           type: string
-        debit:
-          type: number
-          format: float
-        credit:
-          type: number
-          format: float
-        reference_externe:
+        compte_debit:
           type: string
+        compte_credit:
+          type: string
+        montant:
+          type: string
+        facture_id:
+          type: integer
           nullable: true
-        type_reference:
-          type: string
-          nullable: true
-        lettrage:
-          type: string
-          nullable: true
-        validee:
-          type: boolean
-        created_at:
-          type: string
-          format: date-time
 
     Entreprise:
       type: object
@@ -771,8 +1430,10 @@ components:
           type: integer
         nom:
           type: string
+          example: "Mon Entreprise"
         siret:
           type: string
+          example: "12345678901234"
         adresse:
           type: string
         code_postal:
@@ -785,27 +1446,26 @@ components:
           type: string
         regime_tva:
           type: string
-          enum: [reel_normal, reel_simplifie, franchise]
+          enum: [franchise, reel_simplifie, reel_normal]
         date_cloture_exercice:
           type: string
-          format: date
+          format: date-time
         created_at:
           type: string
           format: date-time
 
-    ComptePCG:
+    CompteComptable:
       type: object
       properties:
         numero:
           type: string
-          example: '101'
+          example: "411"
         libelle:
           type: string
-          example: 'Capital'
+          example: "Clients"
         classe:
           type: integer
-          minimum: 1
-          maximum: 7
+          example: 4
         type:
           type: string
           enum: [actif, passif, charge, produit]

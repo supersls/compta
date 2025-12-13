@@ -367,52 +367,15 @@ class _DeclarationTVAFormScreenState extends State<DeclarationTVAFormScreen> {
   Future<void> _saveDeclaration() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isLoading = true);
-
-    try {
-      final tvaCollectee = AppValidators.parseMontant(_tvaCollecteeController.text)!;
-      final tvaDeductible = AppValidators.parseMontant(_tvaDeductibleController.text)!;
-      final tvaADecaisser = tvaCollectee - tvaDeductible;
-
-      final declaration = DeclarationTVA(
-        id: widget.declaration?.id,
-        periodeDebut: _periodeDebut,
-        periodeFin: _periodeFin,
-        tvaCollectee: tvaCollectee,
-        tvaDeductible: tvaDeductible,
-        tvaADecaisser: tvaADecaisser,
-        statut: widget.declaration?.statut ?? 'en_cours',
-        notes: _notesController.text.isEmpty ? null : _notesController.text,
+    // Backend endpoints not yet implemented
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('La création et modification de déclarations TVA n\'est pas encore implémentée dans l\'API backend.'),
+          backgroundColor: Colors.orange,
+          duration: Duration(seconds: 4),
+        ),
       );
-
-      if (_isEditMode) {
-        await _tvaService.updateDeclaration(declaration);
-      } else {
-        await _tvaService.createDeclaration(declaration);
-      }
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_isEditMode ? 'Déclaration modifiée' : 'Déclaration créée'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        Navigator.pop(context, true);
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
     }
   }
 }

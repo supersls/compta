@@ -97,16 +97,17 @@ class _TVAListScreenState extends State<TVAListScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showDeclarationForm(),
-        icon: const Icon(Icons.add),
-        label: const Text('Nouvelle déclaration'),
-      ),
+      floatingActionButton: null,
     );
   }
 
   Widget _buildStatistiques() {
     final stats = _statistiques!;
+    // Backend returns string values, need to parse them
+    final collectee = double.tryParse(stats['total_collectee']?.toString() ?? '0') ?? 0;
+    final deductible = double.tryParse(stats['total_deductible']?.toString() ?? '0') ?? 0;
+    final aPayer = double.tryParse(stats['total_a_payer']?.toString() ?? '0') ?? 0;
+    
     return Container(
       padding: const EdgeInsets.all(16),
       color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
@@ -115,7 +116,7 @@ class _TVAListScreenState extends State<TVAListScreen> {
           Expanded(
             child: _buildStatCard(
               'TVA Collectée',
-              AppFormatters.formatMontant(stats['tva_collectee_annee'] ?? 0),
+              AppFormatters.formatMontant(collectee),
               Icons.arrow_upward,
               Colors.green,
             ),
@@ -124,7 +125,7 @@ class _TVAListScreenState extends State<TVAListScreen> {
           Expanded(
             child: _buildStatCard(
               'TVA Déductible',
-              AppFormatters.formatMontant(stats['tva_deductible_annee'] ?? 0),
+              AppFormatters.formatMontant(deductible),
               Icons.arrow_downward,
               Colors.blue,
             ),
@@ -132,8 +133,8 @@ class _TVAListScreenState extends State<TVAListScreen> {
           const SizedBox(width: 16),
           Expanded(
             child: _buildStatCard(
-              'À Décaisser',
-              AppFormatters.formatMontant(stats['tva_a_decaisser_annee'] ?? 0),
+              'À Payer',
+              AppFormatters.formatMontant(aPayer),
               Icons.payment,
               Colors.orange,
             ),
@@ -193,7 +194,7 @@ class _TVAListScreenState extends State<TVAListScreen> {
             value: _statutFilter,
             items: const [
               DropdownMenuItem(value: 'tous', child: Text('Tous')),
-              DropdownMenuItem(value: 'en_cours', child: Text('En cours')),
+              DropdownMenuItem(value: 'brouillon', child: Text('Brouillon')),
               DropdownMenuItem(value: 'validee', child: Text('Validée')),
               DropdownMenuItem(value: 'transmise', child: Text('Transmise')),
               DropdownMenuItem(value: 'payee', child: Text('Payée')),
@@ -246,10 +247,15 @@ class _TVAListScreenState extends State<TVAListScreen> {
         statutIcon = Icons.verified;
         statutLabel = 'Validée';
         break;
+      case 'brouillon':
+        statutColor = Colors.grey;
+        statutIcon = Icons.edit;
+        statutLabel = 'Brouillon';
+        break;
       default:
         statutColor = Colors.grey;
         statutIcon = Icons.pending;
-        statutLabel = 'En cours';
+        statutLabel = declaration.statut;
     }
 
     return Card(
@@ -376,10 +382,14 @@ class _TVAListScreenState extends State<TVAListScreen> {
             style: Theme.of(context).textTheme.headlineSmall,
           ),
           const SizedBox(height: 8),
-          Text(
-            'Créez votre première déclaration',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Colors.grey,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Text(
+              'Les déclarations TVA sont affichées depuis la base de données',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Colors.grey,
+              ),
+              textAlign: TextAlign.center,
             ),
           ),
           const SizedBox(height: 24),
