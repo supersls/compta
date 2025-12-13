@@ -54,22 +54,35 @@ class EcritureComptable {
   }
 
   factory EcritureComptable.fromMap(Map<String, dynamic> map) {
+    // Helper to convert to double
+    double _toDouble(dynamic value) {
+      if (value == null) return 0;
+      if (value is double) return value;
+      if (value is int) return value.toDouble();
+      if (value is String) return double.tryParse(value) ?? 0;
+      return 0;
+    }
+
     return EcritureComptable(
       id: map['id'],
-      numeroPiece: map['numero_piece'],
-      dateEcriture: DateTime.parse(map['date_ecriture']),
-      journal: map['journal'],
-      compte: map['compte'],
-      libelle: map['libelle'],
-      debit: map['debit'] ?? 0,
-      credit: map['credit'] ?? 0,
+      numeroPiece: map['numero_piece'] ?? '',
+      dateEcriture: map['date_ecriture'] is String
+          ? DateTime.parse(map['date_ecriture'])
+          : (map['date_ecriture'] as DateTime?) ?? DateTime.now(),
+      journal: map['journal'] ?? '',
+      compte: map['compte'] ?? '',
+      libelle: map['libelle'] ?? '',
+      debit: _toDouble(map['debit']),
+      credit: _toDouble(map['credit']),
       referenceExterne: map['reference_externe'],
       typeReference: map['type_reference'],
       lettrage: map['lettrage'],
-      validee: map['validee'] == 1,
+      validee: map['validee'] == 1 || map['validee'] == true,
       rectificationDe: map['rectification_de'],
       createdBy: map['created_by'],
-      createdAt: DateTime.parse(map['created_at']),
+      createdAt: map['created_at'] is String
+          ? DateTime.parse(map['created_at'])
+          : (map['created_at'] as DateTime?) ?? DateTime.now(),
     );
   }
 

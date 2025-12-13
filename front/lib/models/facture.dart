@@ -58,25 +58,51 @@ class Facture {
   }
 
   factory Facture.fromMap(Map<String, dynamic> map) {
+    // Helper function to convert to double
+    double _toDouble(dynamic value) {
+      if (value == null) return 0;
+      if (value is double) return value;
+      if (value is int) return value.toDouble();
+      if (value is String) return double.tryParse(value) ?? 0;
+      return 0;
+    }
+
+    // Helper function to convert to int
+    int? _toInt(dynamic value) {
+      if (value == null) return null;
+      if (value is int) return value;
+      if (value is String) return int.tryParse(value);
+      if (value is double) return value.toInt();
+      return null;
+    }
+
     return Facture(
-      id: map['id'],
-      numero: map['numero'],
-      type: map['type'],
-      dateEmission: DateTime.parse(map['date_emission']),
+      id: _toInt(map['id']),
+      numero: map['numero'] ?? '',
+      type: map['type'] ?? 'vente',
+      dateEmission: map['date_emission'] is String 
+          ? DateTime.parse(map['date_emission'])
+          : (map['date_emission'] as DateTime?)?? DateTime.now(),
       dateEcheance: map['date_echeance'] != null 
-          ? DateTime.parse(map['date_echeance']) 
+          ? (map['date_echeance'] is String 
+              ? DateTime.parse(map['date_echeance'])
+              : map['date_echeance'] as DateTime)
           : null,
-      clientFournisseur: map['client_fournisseur'],
+      clientFournisseur: map['client_fournisseur'] ?? '',
       siretClient: map['siret_client'],
-      montantHT: map['montant_ht'],
-      montantTVA: map['montant_tva'],
-      montantTTC: map['montant_ttc'],
-      statut: map['statut'],
-      montantPaye: map['montant_paye'] ?? 0,
+      montantHT: _toDouble(map['montant_ht']),
+      montantTVA: _toDouble(map['montant_tva']),
+      montantTTC: _toDouble(map['montant_ttc']),
+      statut: map['statut'] ?? 'en_attente',
+      montantPaye: _toDouble(map['montant_paye']),
       categorie: map['categorie'],
       notes: map['notes'],
-      createdAt: DateTime.parse(map['created_at']),
-      updatedAt: DateTime.parse(map['updated_at']),
+      createdAt: map['created_at'] is String
+          ? DateTime.parse(map['created_at'])
+          : (map['created_at'] as DateTime?) ?? DateTime.now(),
+      updatedAt: map['updated_at'] is String
+          ? DateTime.parse(map['updated_at'])
+          : (map['updated_at'] as DateTime?) ?? DateTime.now(),
     );
   }
 

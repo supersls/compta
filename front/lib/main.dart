@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'screens/dashboard_screen.dart';
 import 'screens/factures/factures_list_screen.dart';
 import 'screens/tva/tva_list_screen.dart';
 import 'screens/immobilisations/immobilisations_list_screen.dart';
@@ -75,7 +76,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
       'icon': Icons.dashboard_outlined,
       'selectedIcon': Icons.dashboard,
       'label': 'Tableau de bord',
-      'screen': const DashboardPlaceholder(),
+      'screen': const DashboardScreen(),
     },
     {
       'icon': Icons.receipt_long_outlined,

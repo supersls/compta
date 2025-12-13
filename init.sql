@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS factures (
   montant_ttc DECIMAL(12, 2) NOT NULL,
   statut VARCHAR(30) DEFAULT 'en_attente' CHECK (statut IN ('en_attente', 'payee', 'partiellement_payee', 'en_retard')),
   montant_paye DECIMAL(12, 2) DEFAULT 0,
+  reste_a_payer DECIMAL(12, 2) DEFAULT 0,
   categorie VARCHAR(100),
   notes TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -230,6 +231,21 @@ INSERT INTO comptes_pcg (numero, libelle, classe, type) VALUES
 ('707', 'Ventes de marchandises', 7, 'produit'),
 ('708', 'Produits des activités annexes', 7, 'produit')
 ON CONFLICT (numero) DO NOTHING;
+
+-- Insert default company data
+INSERT INTO entreprise (nom, siret, adresse, code_postal, ville, email, telephone, regime_tva, date_cloture_exercice)
+VALUES (
+  'Mon Entreprise',
+  '12345678901234',
+  '1 Rue de la Comptabilité',
+  '75001',
+  'Paris',
+  'contact@monentreprise.fr',
+  '0123456789',
+  'reel_normal',
+  '2025-12-31'
+)
+ON CONFLICT (siret) DO NOTHING;
 
 -- Trigger pour mettre à jour updated_at
 CREATE OR REPLACE FUNCTION update_updated_at_column()

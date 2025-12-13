@@ -54,33 +54,59 @@ class Immobilisation {
   }
 
   factory Immobilisation.fromMap(Map<String, dynamic> map) {
+    // Helper to convert to double
+    double _toDouble(dynamic value) {
+      if (value == null) return 0;
+      if (value is double) return value;
+      if (value is int) return value.toDouble();
+      if (value is String) return double.tryParse(value) ?? 0;
+      return 0;
+    }
+
+    // Helper to convert to int
+    int _toInt(dynamic value) {
+      if (value == null) return 0;
+      if (value is int) return value;
+      if (value is String) return int.tryParse(value) ?? 0;
+      if (value is double) return value.toInt();
+      return 0;
+    }
+
     return Immobilisation(
       id: map['id'],
       libelle: map['libelle'] ?? map['designation'] ?? '',
       type: map['type'] ?? map['categorie'] ?? '',
-      dateAcquisition: DateTime.parse(map['date_acquisition']),
-      valeurAcquisition: (map['valeur_acquisition'] as num).toDouble(),
-      dureeAmortissement: map['duree_amortissement'] as int,
+      dateAcquisition: map['date_acquisition'] is String
+          ? DateTime.parse(map['date_acquisition'])
+          : (map['date_acquisition'] as DateTime?) ?? DateTime.now(),
+      valeurAcquisition: _toDouble(map['valeur_acquisition']),
+      dureeAmortissement: _toInt(map['duree_amortissement']),
       methodeAmortissement: map['methode_amortissement'] ?? 'lineaire',
       tauxAmortissement: map['taux_amortissement'] != null
-          ? (map['taux_amortissement'] as num).toDouble()
+          ? _toDouble(map['taux_amortissement'])
           : null,
       valeurResiduelle: map['valeur_residuelle'] != null
-          ? (map['valeur_residuelle'] as num).toDouble()
+          ? _toDouble(map['valeur_residuelle'])
           : (map['valeur_nette_comptable'] != null
-              ? (map['valeur_nette_comptable'] as num).toDouble()
+              ? _toDouble(map['valeur_nette_comptable'])
               : 0),
       compteImmobilisation: map['compte_immobilisation'],
       compteAmortissement: map['compte_amortissement'],
       enService: map['en_service'] == 1 || map['en_service'] == true,
       dateCession: map['date_cession'] != null
-          ? DateTime.parse(map['date_cession'])
+          ? (map['date_cession'] is String
+              ? DateTime.parse(map['date_cession'])
+              : map['date_cession'] as DateTime)
           : null,
       notes: map['notes'],
       createdAt: map['created_at'] != null
-          ? DateTime.parse(map['created_at'])
+          ? (map['created_at'] is String
+              ? DateTime.parse(map['created_at'])
+              : map['created_at'] as DateTime)
           : (map['date_creation'] != null
-              ? DateTime.parse(map['date_creation'])
+              ? (map['date_creation'] is String
+                  ? DateTime.parse(map['date_creation'])
+                  : map['date_creation'] as DateTime)
               : DateTime.now()),
     );
   }

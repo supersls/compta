@@ -240,8 +240,40 @@ Pour basculer entre SQLite et PostgreSQL, modifiez la configuration dans les ser
 
 ## 🧪 Tests
 
+### Tests API Backend
+
+Deux suites de tests pour valider tous les endpoints API:
+
+#### Option 1: Bash Script (curl)
+```bash
+chmod +x backend/test.sh
+./backend/test.sh
+```
+
+#### Option 2: Node.js
+```bash
+cd backend
+node test.js
+```
+
+Les tests couvrent 30+ endpoints:
+- ✅ Santé du backend (health check)
+- ✅ Endpoints factures (7)
+- ✅ Endpoints TVA (2)
+- ✅ Endpoints banque (5+)
+- ✅ Endpoints immobilisations (2)
+- ✅ Documents comptables (4)
+- ✅ Entreprise et comptabilité (2)
+
+Les tests utilisent les données réelles de la base de données et valident les codes HTTP et structure des réponses.
+
+Pour plus de détails: [backend/TEST_README.md](backend/TEST_README.md)
+
+### Tests Frontend
+
 ```bash
 # Tests unitaires
+cd front
 flutter test
 
 # Tests d'intégration

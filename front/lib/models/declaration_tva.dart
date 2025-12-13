@@ -46,23 +46,44 @@ class DeclarationTVA {
   }
 
   factory DeclarationTVA.fromMap(Map<String, dynamic> map) {
+    // Helper to convert to double
+    double _toDouble(dynamic value) {
+      if (value == null) return 0;
+      if (value is double) return value;
+      if (value is int) return value.toDouble();
+      if (value is String) return double.tryParse(value) ?? 0;
+      return 0;
+    }
+
     return DeclarationTVA(
       id: map['id'],
-      periodeDebut: DateTime.parse(map['periode_debut']),
-      periodeFin: DateTime.parse(map['periode_fin']),
-      tvaCollectee: (map['tva_collectee'] as num).toDouble(),
-      tvaDeductible: (map['tva_deductible'] as num).toDouble(),
-      tvaADecaisser: (map['tva_a_decaisser'] as num).toDouble(),
+      periodeDebut: map['periode_debut'] is String
+          ? DateTime.parse(map['periode_debut'])
+          : (map['periode_debut'] as DateTime?) ?? DateTime.now(),
+      periodeFin: map['periode_fin'] is String
+          ? DateTime.parse(map['periode_fin'])
+          : (map['periode_fin'] as DateTime?) ?? DateTime.now(),
+      tvaCollectee: _toDouble(map['tva_collectee']),
+      tvaDeductible: _toDouble(map['tva_deductible']),
+      tvaADecaisser: _toDouble(map['tva_a_decaisser']),
       statut: map['statut'] ?? 'en_cours',
       dateTransmission: map['date_transmission'] != null
-          ? DateTime.parse(map['date_transmission'])
+          ? (map['date_transmission'] is String
+              ? DateTime.parse(map['date_transmission'])
+              : map['date_transmission'] as DateTime)
           : null,
       datePaiement: map['date_paiement'] != null
-          ? DateTime.parse(map['date_paiement'])
+          ? (map['date_paiement'] is String
+              ? DateTime.parse(map['date_paiement'])
+              : map['date_paiement'] as DateTime)
           : null,
       notes: map['notes'],
-      createdAt: DateTime.parse(map['created_at']),
-      updatedAt: DateTime.parse(map['updated_at']),
+      createdAt: map['created_at'] is String
+          ? DateTime.parse(map['created_at'])
+          : (map['created_at'] as DateTime?) ?? DateTime.now(),
+      updatedAt: map['updated_at'] is String
+          ? DateTime.parse(map['updated_at'])
+          : (map['updated_at'] as DateTime?) ?? DateTime.now(),
     );
   }
 

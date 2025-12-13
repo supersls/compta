@@ -105,7 +105,8 @@ router.get('/stats/overview', async (req, res) => {
         SUM(CASE WHEN type = 'achat' THEN montant_ttc ELSE 0 END) as total_achats,
         SUM(CASE WHEN statut != 'payee' THEN reste_a_payer ELSE 0 END) as total_impayees,
         COUNT(CASE WHEN statut != 'payee' THEN 1 END) as count_impayees,
-        COUNT(CASE WHEN statut != 'payee' AND date_echeance < CURRENT_DATE THEN 1 END) as count_retard
+        COUNT(CASE WHEN statut != 'payee' AND date_echeance < CURRENT_DATE THEN 1 END) as count_retard,
+        COUNT(CASE WHEN type = 'vente' THEN 1 END) as countVentes
       FROM factures
     `);
     
@@ -115,7 +116,8 @@ router.get('/stats/overview', async (req, res) => {
       totalAchats: parseFloat(stats.total_achats || 0),
       totalImpayees: parseFloat(stats.total_impayees || 0),
       countImpayees: parseInt(stats.count_impayees || 0),
-      countRetard: parseInt(stats.count_retard || 0)
+      countRetard: parseInt(stats.count_retard || 0),
+      countVentes: parseInt(stats.countVentes || 0)
     });
   } catch (err) {
     console.error(err);

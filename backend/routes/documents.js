@@ -140,7 +140,9 @@ router.get('/bilan', async (req, res) => {
 // Compte de Résultat
 router.get('/compte-resultat', async (req, res) => {
   try {
-    const { debut, fin } = req.query;
+    const { debut, fin, dateDebut, dateFin } = req.query;
+    const periodeDebut = debut || dateDebut;
+    const periodeFin = fin || dateFin;
     
     const query = `
       SELECT 
@@ -163,7 +165,7 @@ router.get('/compte-resultat', async (req, res) => {
               WHEN compte LIKE '70%' THEN 'Ventes de marchandises'
               WHEN compte LIKE '71%' THEN 'Production vendue'
               WHEN compte LIKE '72%' THEN 'Production stockée'
-              WHEN compte LIKE '74%' THEN 'Subventions d\'exploitation'
+              WHEN compte LIKE '74%' THEN 'Subventions exploitation'
               WHEN compte LIKE '75%' THEN 'Autres produits'
               WHEN compte LIKE '76%' THEN 'Produits financiers'
               WHEN compte LIKE '77%' THEN 'Produits exceptionnels'
@@ -185,7 +187,7 @@ router.get('/compte-resultat', async (req, res) => {
       HAVING SUM(CASE WHEN compte LIKE '6%' THEN debit ELSE credit END) > 0
     `;
     
-    const result = await pool.query(query, [debut, fin]);
+    const result = await pool.query(query, [periodeDebut, periodeFin]);
     
     const charges = {};
     const produits = {};
@@ -205,8 +207,8 @@ router.get('/compte-resultat', async (req, res) => {
     const resultatNet = totalProduits - totalCharges;
     
     res.json({
-      periode_debut: debut,
-      periode_fin: fin,
+      periode_debut: periodeDebut,
+      periode_fin: periodeFin,
       charges,
       produits,
       total_charges: totalCharges,

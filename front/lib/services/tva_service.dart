@@ -63,6 +63,11 @@ class TVAService {
     return await ApiService.get('tva/statistiques');
   }
 
+  // Alias pour getTVAStats
+  Future<Map<String, dynamic>> getTVAStats() async {
+    return await getStatistiquesTVA();
+  }
+
   // Récupérer le détail de la TVA par taux
   Future<List<Map<String, dynamic>>> getDetailParTaux(DateTime debut, DateTime fin) async {
     final debutStr = debut.toIso8601String().split('T')[0];

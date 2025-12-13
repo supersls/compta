@@ -262,16 +262,22 @@ router.get('/statistiques', async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT 
-        SUM(valeur_acquisition) as total_acquisition,
-        SUM(valeur_nette_comptable) as total_vnc,
-        SUM(valeur_acquisition - valeur_nette_comptable) as total_amorti,
+        COALESCE(SUM(valeur_acquisition), 0) as total_acquisition,
+        COALESCE(SUM(valeur_acquisition - valeur_residuelle), 0) as total_amortissable,
         COUNT(*) as nombre_immobilisations,
-        COUNT(CASE WHEN date_cession IS NULL THEN 1 END) as actives,
-        COUNT(CASE WHEN date_cession IS NOT NULL THEN 1 END) as cedees
+        COUNT(CASE WHEN en_service = true THEN 1 END) as actives,
+        COUNT(CASE WHEN en_service = false OR date_cession IS NOT NULL THEN 1 END) as cedees
       FROM immobilisations
     `);
     
-    res.json(result.rows[0]);
+    const stats = result.rows[0];
+    res.json({
+      totalAcquisition: parseFloat(stats.total_acquisition),
+      totalAmortissable: parseFloat(stats.total_amortissable),
+      nombreImmobilisations: parseInt(stats.nombre_immobilisations),
+      actives: parseInt(stats.actives),
+      cedees: parseInt(stats.cedees)
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Erreur lors de la récupération des statistiques' });

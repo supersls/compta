@@ -1,0 +1,811 @@
+openapi: 3.0.0
+info:
+  title: Compta EI API
+  description: API REST pour la gestion comptable d'une Entreprise Individuelle
+  version: 1.0.0
+  contact:
+    name: Compta EI
+    email: contact@monentreprise.fr
+
+servers:
+  - url: http://localhost:3000/api
+    description: Serveur de développement
+  - url: https://api.compta-ei.fr/api
+    description: Serveur de production
+
+tags:
+  - name: Health
+    description: Santé du serveur
+  - name: Factures
+    description: Gestion des factures (ventes et achats)
+  - name: TVA
+    description: Gestion de la TVA et déclarations
+  - name: Banque
+    description: Gestion des comptes bancaires et transactions
+  - name: Immobilisations
+    description: Gestion des immobilisations et amortissements
+  - name: Documents
+    description: Documents comptables (Journal, Grand Livre, Bilan, etc.)
+  - name: Entreprise
+    description: Informations de l'entreprise
+  - name: Comptabilité
+    description: Plan comptable et écritures
+
+paths:
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      description: Vérifie que le serveur fonctionne correctement
+      responses:
+        '200':
+          description: Serveur opérationnel
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: OK
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /factures:
+    get:
+      tags:
+        - Factures
+      summary: Get all invoices
+      description: Récupère toutes les factures (ventes et achats)
+      responses:
+        '200':
+          description: Liste des factures
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Facture'
+
+  /factures/stats/overview:
+    get:
+      tags:
+        - Factures
+      summary: Get invoice statistics
+      description: Statistiques globales des factures
+      responses:
+        '200':
+          description: Statistiques des factures
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalVentes:
+                    type: number
+                    format: float
+                    example: 286735.08
+                  totalAchats:
+                    type: number
+                    format: float
+                    example: 0
+                  totalImpayees:
+                    type: number
+                    format: float
+                    example: 34819.2
+                  countImpayees:
+                    type: integer
+                    example: 3
+                  countRetard:
+                    type: integer
+                    example: 2
+                  countVentes:
+                    type: integer
+                    example: 27
+
+  /factures/type/{type}:
+    get:
+      tags:
+        - Factures
+      summary: Get invoices by type
+      description: Récupère les factures par type (vente ou achat)
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [vente, achat]
+      responses:
+        '200':
+          description: Liste des factures du type spécifié
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Facture'
+
+  /factures/statut/{statut}:
+    get:
+      tags:
+        - Factures
+      summary: Get invoices by status
+      description: Récupère les factures par statut
+      parameters:
+        - name: statut
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [en_attente, payee, partiellement_payee, en_retard]
+      responses:
+        '200':
+          description: Liste des factures avec le statut spécifié
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Facture'
+
+  /factures/filter/retard:
+    get:
+      tags:
+        - Factures
+      summary: Get overdue invoices
+      description: Récupère les factures en retard de paiement
+      responses:
+        '200':
+          description: Liste des factures en retard
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Facture'
+
+  /tva/declarations:
+    get:
+      tags:
+        - TVA
+      summary: Get all TVA declarations
+      description: Récupère toutes les déclarations de TVA
+      responses:
+        '200':
+          description: Liste des déclarations de TVA
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DeclarationTVA'
+
+  /tva/calcul/{debut}/{fin}:
+    get:
+      tags:
+        - TVA
+      summary: Calculate TVA for period
+      description: Calcule la TVA pour une période donnée
+      parameters:
+        - name: debut
+          in: path
+          required: true
+          schema:
+            type: string
+            format: date
+          example: '2025-01-01'
+        - name: fin
+          in: path
+          required: true
+          schema:
+            type: string
+            format: date
+          example: '2025-12-13'
+      responses:
+        '200':
+          description: Calcul de la TVA
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tvaCollectee:
+                    type: number
+                    format: float
+                    example: 24404.4
+                  tvaDeductible:
+                    type: number
+                    format: float
+                    example: 0
+                  tvaADecaisser:
+                    type: number
+                    format: float
+                    example: 24404.4
+                  periodeDebut:
+                    type: string
+                    format: date
+                  periodeFin:
+                    type: string
+                    format: date
+
+  /banque/comptes:
+    get:
+      tags:
+        - Banque
+      summary: Get all bank accounts
+      description: Récupère tous les comptes bancaires
+      responses:
+        '200':
+          description: Liste des comptes bancaires
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CompteBancaire'
+
+  /banque/transactions:
+    get:
+      tags:
+        - Banque
+      summary: Get all transactions
+      description: Récupère toutes les transactions bancaires
+      responses:
+        '200':
+          description: Liste des transactions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TransactionBancaire'
+
+  /banque/statistiques:
+    get:
+      tags:
+        - Banque
+      summary: Get bank statistics
+      description: Statistiques des comptes bancaires
+      responses:
+        '200':
+          description: Statistiques bancaires
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  nombreComptes:
+                    type: integer
+                    example: 0
+                  totalSoldes:
+                    type: number
+                    format: float
+                    example: 0
+                  nombreTransactions:
+                    type: integer
+                    example: 0
+                  totalCredits:
+                    type: number
+                    format: float
+                    example: 0
+                  totalDebits:
+                    type: number
+                    format: float
+                    example: 0
+
+  /immobilisations:
+    get:
+      tags:
+        - Immobilisations
+      summary: Get all fixed assets
+      description: Récupère toutes les immobilisations
+      responses:
+        '200':
+          description: Liste des immobilisations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Immobilisation'
+
+  /immobilisations/statistiques:
+    get:
+      tags:
+        - Immobilisations
+      summary: Get immobilisations statistics
+      description: Statistiques des immobilisations
+      responses:
+        '200':
+          description: Statistiques des immobilisations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalAcquisition:
+                    type: number
+                    format: float
+                    example: 0
+                  totalAmortissable:
+                    type: number
+                    format: float
+                    example: 0
+                  nombreImmobilisations:
+                    type: integer
+                    example: 0
+                  actives:
+                    type: integer
+                    example: 0
+                  cedees:
+                    type: integer
+                    example: 0
+
+  /documents/journal:
+    get:
+      tags:
+        - Documents
+      summary: Get journal comptable
+      description: Génère le journal comptable pour une période
+      parameters:
+        - name: dateDebut
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          example: '2025-01-01'
+        - name: dateFin
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          example: '2025-12-31'
+      responses:
+        '200':
+          description: Journal comptable
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EcritureComptable'
+
+  /documents/grand-livre:
+    get:
+      tags:
+        - Documents
+      summary: Get grand livre
+      description: Génère le grand livre pour une période
+      parameters:
+        - name: dateDebut
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          example: '2025-01-01'
+        - name: dateFin
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          example: '2025-12-31'
+      responses:
+        '200':
+          description: Grand livre
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+  /documents/bilan:
+    get:
+      tags:
+        - Documents
+      summary: Get balance sheet
+      description: Génère le bilan comptable à une date donnée
+      parameters:
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          example: '2025-12-31'
+      responses:
+        '200':
+          description: Bilan comptable
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  date_arrete:
+                    type: string
+                    format: date
+                  actif:
+                    type: object
+                  passif:
+                    type: object
+                  total_actif:
+                    type: number
+                    format: float
+                  total_passif:
+                    type: number
+                    format: float
+                  resultat:
+                    type: number
+                    format: float
+
+  /documents/compte-resultat:
+    get:
+      tags:
+        - Documents
+      summary: Get income statement
+      description: Génère le compte de résultat pour une période
+      parameters:
+        - name: dateDebut
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          example: '2025-01-01'
+        - name: dateFin
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          example: '2025-12-31'
+      responses:
+        '200':
+          description: Compte de résultat
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  periode_debut:
+                    type: string
+                    format: date
+                  periode_fin:
+                    type: string
+                    format: date
+                  charges:
+                    type: object
+                  produits:
+                    type: object
+                  total_charges:
+                    type: number
+                    format: float
+                  total_produits:
+                    type: number
+                    format: float
+                  resultat_net:
+                    type: number
+                    format: float
+
+  /entreprise:
+    get:
+      tags:
+        - Entreprise
+      summary: Get company info
+      description: Récupère les informations de l'entreprise
+      responses:
+        '200':
+          description: Informations de l'entreprise
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entreprise'
+        '404':
+          description: Informations entreprise non trouvées
+
+  /comptabilite/comptes:
+    get:
+      tags:
+        - Comptabilité
+      summary: Get accounting plan
+      description: Récupère le plan comptable (PCG)
+      responses:
+        '200':
+          description: Plan comptable
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ComptePCG'
+
+components:
+  schemas:
+    Facture:
+      type: object
+      properties:
+        id:
+          type: integer
+        numero:
+          type: string
+          example: 'FAC-2025-001'
+        type:
+          type: string
+          enum: [vente, achat]
+        date_emission:
+          type: string
+          format: date-time
+        date_echeance:
+          type: string
+          format: date-time
+        client_fournisseur:
+          type: string
+        siret_client:
+          type: string
+          nullable: true
+        montant_ht:
+          type: number
+          format: float
+        montant_tva:
+          type: number
+          format: float
+        montant_ttc:
+          type: number
+          format: float
+        statut:
+          type: string
+          enum: [en_attente, payee, partiellement_payee, en_retard]
+        montant_paye:
+          type: number
+          format: float
+        reste_a_payer:
+          type: number
+          format: float
+        categorie:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    DeclarationTVA:
+      type: object
+      properties:
+        id:
+          type: integer
+        periode_debut:
+          type: string
+          format: date
+        periode_fin:
+          type: string
+          format: date
+        tva_collectee:
+          type: number
+          format: float
+        tva_deductible:
+          type: number
+          format: float
+        tva_a_payer:
+          type: number
+          format: float
+        statut:
+          type: string
+          enum: [brouillon, declaree, payee]
+        date_declaration:
+          type: string
+          format: date
+          nullable: true
+        date_paiement:
+          type: string
+          format: date
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    CompteBancaire:
+      type: object
+      properties:
+        id:
+          type: integer
+        nom:
+          type: string
+        banque:
+          type: string
+        numero_compte:
+          type: string
+        iban:
+          type: string
+        solde_initial:
+          type: number
+          format: float
+        solde_actuel:
+          type: number
+          format: float
+        date_ouverture:
+          type: string
+          format: date
+        actif:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    TransactionBancaire:
+      type: object
+      properties:
+        id:
+          type: integer
+        compte_bancaire_id:
+          type: integer
+        date_transaction:
+          type: string
+          format: date
+        date_valeur:
+          type: string
+          format: date
+          nullable: true
+        libelle:
+          type: string
+        debit:
+          type: number
+          format: float
+        credit:
+          type: number
+          format: float
+        solde:
+          type: number
+          format: float
+        categorie:
+          type: string
+          nullable: true
+        rapproche:
+          type: boolean
+        facture_id:
+          type: integer
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    Immobilisation:
+      type: object
+      properties:
+        id:
+          type: integer
+        libelle:
+          type: string
+        type:
+          type: string
+        date_acquisition:
+          type: string
+          format: date
+        valeur_acquisition:
+          type: number
+          format: float
+        duree_amortissement:
+          type: integer
+        methode_amortissement:
+          type: string
+          enum: [lineaire, degressif]
+        taux_amortissement:
+          type: number
+          format: float
+        valeur_residuelle:
+          type: number
+          format: float
+        compte_immobilisation:
+          type: string
+        compte_amortissement:
+          type: string
+        en_service:
+          type: boolean
+        date_cession:
+          type: string
+          format: date
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    EcritureComptable:
+      type: object
+      properties:
+        id:
+          type: integer
+        numero_piece:
+          type: string
+        date_ecriture:
+          type: string
+          format: date
+        journal:
+          type: string
+        compte:
+          type: string
+        libelle:
+          type: string
+        debit:
+          type: number
+          format: float
+        credit:
+          type: number
+          format: float
+        reference_externe:
+          type: string
+          nullable: true
+        type_reference:
+          type: string
+          nullable: true
+        lettrage:
+          type: string
+          nullable: true
+        validee:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    Entreprise:
+      type: object
+      properties:
+        id:
+          type: integer
+        nom:
+          type: string
+        siret:
+          type: string
+        adresse:
+          type: string
+        code_postal:
+          type: string
+        ville:
+          type: string
+        email:
+          type: string
+        telephone:
+          type: string
+        regime_tva:
+          type: string
+          enum: [reel_normal, reel_simplifie, franchise]
+        date_cloture_exercice:
+          type: string
+          format: date
+        created_at:
+          type: string
+          format: date-time
+
+    ComptePCG:
+      type: object
+      properties:
+        numero:
+          type: string
+          example: '101'
+        libelle:
+          type: string
+          example: 'Capital'
+        classe:
+          type: integer
+          minimum: 1
+          maximum: 7
+        type:
+          type: string
+          enum: [actif, passif, charge, produit]

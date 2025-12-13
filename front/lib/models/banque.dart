@@ -36,19 +36,28 @@ class CompteBancaire {
   }
 
   factory CompteBancaire.fromMap(Map<String, dynamic> map) {
+    // Helper to convert to double
+    double _toDouble(dynamic value) {
+      if (value == null) return 0;
+      if (value is double) return value;
+      if (value is int) return value.toDouble();
+      if (value is String) return double.tryParse(value) ?? 0;
+      return 0;
+    }
+
     return CompteBancaire(
       id: map['id'],
       nom: map['nom'] ?? '',
       banque: map['banque'] ?? '',
       numeroCompte: map['numero_compte'],
       iban: map['iban'],
-      soldeInitial: map['solde_initial'] != null
-          ? (map['solde_initial'] as num).toDouble()
-          : 0,
-      soldeActuel: (map['solde_actuel'] as num).toDouble(),
+      soldeInitial: _toDouble(map['solde_initial']),
+      soldeActuel: _toDouble(map['solde_actuel']),
       actif: map['actif'] == true || map['actif'] == 1,
       dateCreation: map['date_creation'] != null
-          ? DateTime.parse(map['date_creation'])
+          ? (map['date_creation'] is String
+              ? DateTime.parse(map['date_creation'])
+              : map['date_creation'] as DateTime)
           : null,
     );
   }
@@ -136,21 +145,36 @@ class TransactionBancaire {
   }
 
   factory TransactionBancaire.fromMap(Map<String, dynamic> map) {
+    // Helper to convert to double
+    double _toDouble(dynamic value) {
+      if (value == null) return 0;
+      if (value is double) return value;
+      if (value is int) return value.toDouble();
+      if (value is String) return double.tryParse(value) ?? 0;
+      return 0;
+    }
+
     return TransactionBancaire(
       id: map['id'],
-      compteId: map['compte_id'] as int,
-      dateTransaction: DateTime.parse(map['date_transaction']),
+      compteId: map['compte_id'] is int ? map['compte_id'] : int.tryParse(map['compte_id'].toString()) ?? 0,
+      dateTransaction: map['date_transaction'] is String
+          ? DateTime.parse(map['date_transaction'])
+          : (map['date_transaction'] as DateTime?) ?? DateTime.now(),
       type: map['type'] ?? 'debit',
-      montant: (map['montant'] as num).toDouble(),
+      montant: _toDouble(map['montant']),
       categorie: map['categorie'],
       description: map['description'],
       reference: map['reference'],
       rapproche: map['rapproche'] == true || map['rapproche'] == 1,
       dateRapprochement: map['date_rapprochement'] != null
-          ? DateTime.parse(map['date_rapprochement'])
+          ? (map['date_rapprochement'] is String
+              ? DateTime.parse(map['date_rapprochement'])
+              : map['date_rapprochement'] as DateTime)
           : null,
       dateCreation: map['date_creation'] != null
-          ? DateTime.parse(map['date_creation'])
+          ? (map['date_creation'] is String
+              ? DateTime.parse(map['date_creation'])
+              : map['date_creation'] as DateTime)
           : null,
       compteNom: map['compte_nom'],
     );

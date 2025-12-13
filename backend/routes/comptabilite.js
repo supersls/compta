@@ -21,7 +21,18 @@ router.get('/ecritures', async (req, res) => {
 // GET plan comptable
 router.get('/plan-comptable', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM plan_comptable ORDER BY numero');
+    const result = await pool.query('SELECT * FROM comptes_pcg ORDER BY numero');
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur lors de la récupération du plan comptable' });
+  }
+});
+
+// GET comptes (alias for plan-comptable)
+router.get('/comptes', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM comptes_pcg ORDER BY numero');
     res.json(result.rows);
   } catch (err) {
     console.error(err);

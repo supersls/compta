@@ -11,6 +11,11 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+// Health check (must be before other routes)
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
 // Routes
 app.use('/api/factures', require('./routes/factures'));
 app.use('/api/tva', require('./routes/tva'));
@@ -19,11 +24,6 @@ app.use('/api/immobilisations', require('./routes/immobilisations'));
 app.use('/api/comptabilite', require('./routes/comptabilite'));
 app.use('/api/entreprise', require('./routes/entreprise'));
 app.use('/api/documents', require('./routes/documents'));
-
-// Health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
-});
 
 // Error handling
 app.use((err, req, res, next) => {
