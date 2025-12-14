@@ -24,6 +24,14 @@ class _GrandLivreScreenState extends State<GrandLivreScreen> {
     _loadData();
   }
 
+  double _parseDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? 0.0;
+    return 0.0;
+  }
+
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     try {
@@ -207,7 +215,7 @@ class _GrandLivreScreenState extends State<GrandLivreScreen> {
                                     fontWeight: FontWeight.bold),
                               ),
                               subtitle: Text(
-                                'Solde: ${AppFormatters.formatMontant(compte['solde_final'])}',
+                                'Solde: ${AppFormatters.formatMontant(_parseDouble(compte['solde_final']))}',
                               ),
                               children: [
                                 Padding(
@@ -220,21 +228,21 @@ class _GrandLivreScreenState extends State<GrandLivreScreen> {
                                         children: [
                                           _SoldeItem(
                                             label: 'Solde initial',
-                                            value: compte['solde_initial'],
+                                            value: _parseDouble(compte['solde_initial']),
                                           ),
                                           _SoldeItem(
                                             label: 'Total débit',
-                                            value: compte['total_debit'],
+                                            value: _parseDouble(compte['total_debit']),
                                             color: Colors.red,
                                           ),
                                           _SoldeItem(
                                             label: 'Total crédit',
-                                            value: compte['total_credit'],
+                                            value: _parseDouble(compte['total_credit']),
                                             color: Colors.green,
                                           ),
                                           _SoldeItem(
                                             label: 'Solde final',
-                                            value: compte['solde_final'],
+                                            value: _parseDouble(compte['solde_final']),
                                             color: Colors.blue,
                                           ),
                                         ],

@@ -24,6 +24,14 @@ class _CompteResultatScreenState extends State<CompteResultatScreen> {
     _loadData();
   }
 
+  double _parseDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? 0.0;
+    return 0.0;
+  }
+
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     try {
@@ -180,7 +188,7 @@ class _CompteResultatScreenState extends State<CompteResultatScreen> {
                   PieChartData(
                     sections: [
                       PieChartSectionData(
-                        value: _compteResultat!['total_produits'],
+                        value: _parseDouble(_compteResultat!['total_produits']),
                         title: 'Produits',
                         color: Colors.green,
                         radius: 60,
@@ -190,7 +198,7 @@ class _CompteResultatScreenState extends State<CompteResultatScreen> {
                         ),
                       ),
                       PieChartSectionData(
-                        value: _compteResultat!['total_charges'],
+                        value: _parseDouble(_compteResultat!['total_charges']),
                         title: 'Charges',
                         color: Colors.red,
                         radius: 60,
@@ -266,7 +274,7 @@ class _CompteResultatScreenState extends State<CompteResultatScreen> {
                                                   Text(
                                                     AppFormatters
                                                         .formatMontant(
-                                                            entry.value),
+                                                            _parseDouble(entry.value)),
                                                     style: const TextStyle(
                                                       fontWeight:
                                                           FontWeight.bold,
@@ -293,8 +301,8 @@ class _CompteResultatScreenState extends State<CompteResultatScreen> {
                                             ),
                                             Text(
                                               AppFormatters.formatMontant(
-                                                  _compteResultat![
-                                                      'total_charges']),
+                                                  _parseDouble(_compteResultat![
+                                                      'total_charges'])),
                                               style: const TextStyle(
                                                 fontWeight: FontWeight.bold,
                                                 fontSize: 16,
@@ -358,7 +366,7 @@ class _CompteResultatScreenState extends State<CompteResultatScreen> {
                                                   Text(
                                                     AppFormatters
                                                         .formatMontant(
-                                                            entry.value),
+                                                            _parseDouble(entry.value)),
                                                     style: const TextStyle(
                                                       fontWeight:
                                                           FontWeight.bold,
@@ -385,8 +393,8 @@ class _CompteResultatScreenState extends State<CompteResultatScreen> {
                                             ),
                                             Text(
                                               AppFormatters.formatMontant(
-                                                  _compteResultat![
-                                                      'total_produits']),
+                                                  _parseDouble(_compteResultat![
+                                                      'total_produits'])),
                                               style: const TextStyle(
                                                 fontWeight: FontWeight.bold,
                                                 fontSize: 16,
@@ -410,17 +418,17 @@ class _CompteResultatScreenState extends State<CompteResultatScreen> {
           if (_compteResultat != null)
             Container(
               padding: const EdgeInsets.all(16),
-              color: _compteResultat!['resultat_net'] >= 0
+              color: _parseDouble(_compteResultat!['resultat_net']) >= 0
                   ? Colors.green.withOpacity(0.1)
                   : Colors.red.withOpacity(0.1),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    _compteResultat!['resultat_net'] >= 0
+                    _parseDouble(_compteResultat!['resultat_net']) >= 0
                         ? Icons.trending_up
                         : Icons.trending_down,
-                    color: _compteResultat!['resultat_net'] >= 0
+                    color: _parseDouble(_compteResultat!['resultat_net']) >= 0
                         ? Colors.green
                         : Colors.red,
                     size: 32,
@@ -430,23 +438,23 @@ class _CompteResultatScreenState extends State<CompteResultatScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        _compteResultat!['resultat_net'] >= 0
+                        _parseDouble(_compteResultat!['resultat_net']) >= 0
                             ? 'Bénéfice'
                             : 'Perte',
                         style: TextStyle(
                           fontSize: 16,
-                          color: _compteResultat!['resultat_net'] >= 0
+                          color: _parseDouble(_compteResultat!['resultat_net']) >= 0
                               ? Colors.green
                               : Colors.red,
                         ),
                       ),
                       Text(
                         AppFormatters.formatMontant(
-                            _compteResultat!['resultat_net'].abs()),
+                            _parseDouble(_compteResultat!['resultat_net']).abs()),
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: _compteResultat!['resultat_net'] >= 0
+                          color: _parseDouble(_compteResultat!['resultat_net']) >= 0
                               ? Colors.green
                               : Colors.red,
                         ),

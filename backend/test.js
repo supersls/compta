@@ -157,6 +157,29 @@ async function runAllTests() {
   console.log(`${colors.blue}========== HEALTH CHECK ==========${colors.reset}`);
   await testEndpoint('GET', '/api/health', 'Health check');
 
+  // ============ CLIENTS ============
+  console.log(`${colors.blue}========== CLIENTS ENDPOINTS ==========${colors.reset}`);
+  await testEndpoint('GET', '/api/clients', 'Get all clients');
+  await testEndpoint('GET', '/api/clients/actifs', 'Get active clients');
+
+  // Get first client for detailed tests
+  try {
+    const clientsRes = await makeRequest('GET', '/api/clients');
+    const clients = JSON.parse(clientsRes.body);
+    if (Array.isArray(clients) && clients.length > 0) {
+      const firstClientId = clients[0].id;
+      await testEndpoint('GET', `/api/clients/${firstClientId}`, 'Get client by ID');
+      await testEndpoint(
+        'GET',
+        `/api/clients/${firstClientId}/factures`,
+        'Get client invoices'
+      );
+      await testEndpoint('GET', `/api/clients/${firstClientId}/stats`, 'Get client statistics');
+    }
+  } catch (error) {
+    console.log(`${colors.yellow}Skipping client-specific tests${colors.reset}\n`);
+  }
+
   // ============ FACTURES ============
   console.log(`${colors.blue}========== FACTURES ENDPOINTS ==========${colors.reset}`);
   await testEndpoint('GET', '/api/factures', 'Get all invoices');

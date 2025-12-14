@@ -22,6 +22,14 @@ class _BilanComptableScreenState extends State<BilanComptableScreen> {
     _loadData();
   }
 
+  double _parseDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? 0.0;
+    return 0.0;
+  }
+
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     try {
@@ -192,7 +200,7 @@ class _BilanComptableScreenState extends State<BilanComptableScreen> {
                                               ),
                                               Text(
                                                 AppFormatters.formatMontant(
-                                                    entry.value),
+                                                    _parseDouble(entry.value)),
                                                 style: const TextStyle(
                                                   fontWeight: FontWeight.bold,
                                                 ),
@@ -218,7 +226,7 @@ class _BilanComptableScreenState extends State<BilanComptableScreen> {
                                             ),
                                             Text(
                                               AppFormatters.formatMontant(
-                                                  _bilan!['total_actif']),
+                                                  _parseDouble(_bilan!['total_actif'])),
                                               style: const TextStyle(
                                                 fontWeight: FontWeight.bold,
                                                 fontSize: 16,
@@ -282,7 +290,7 @@ class _BilanComptableScreenState extends State<BilanComptableScreen> {
                                                   Text(
                                                     AppFormatters
                                                         .formatMontant(
-                                                            entry.value),
+                                                            _parseDouble(entry.value)),
                                                     style: const TextStyle(
                                                       fontWeight:
                                                           FontWeight.bold,
@@ -309,7 +317,7 @@ class _BilanComptableScreenState extends State<BilanComptableScreen> {
                                             ),
                                             Text(
                                               AppFormatters.formatMontant(
-                                                  _bilan!['total_passif']),
+                                                  _parseDouble(_bilan!['total_passif'])),
                                               style: const TextStyle(
                                                 fontWeight: FontWeight.bold,
                                                 fontSize: 16,
@@ -333,28 +341,28 @@ class _BilanComptableScreenState extends State<BilanComptableScreen> {
           if (_bilan != null)
             Container(
               padding: const EdgeInsets.all(16),
-              color: _bilan!['resultat'] >= 0
+              color: _parseDouble(_bilan!['resultat']) >= 0
                   ? Colors.green.withOpacity(0.1)
                   : Colors.red.withOpacity(0.1),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    _bilan!['resultat'] >= 0
+                    _parseDouble(_bilan!['resultat']) >= 0
                         ? Icons.trending_up
                         : Icons.trending_down,
-                    color: _bilan!['resultat'] >= 0
+                    color: _parseDouble(_bilan!['resultat']) >= 0
                         ? Colors.green
                         : Colors.red,
                     size: 32,
                   ),
                   const SizedBox(width: 16),
                   Text(
-                    'Résultat de l\'exercice: ${AppFormatters.formatMontant(_bilan!['resultat'])}',
+                    'Résultat de l\'exercice: ${AppFormatters.formatMontant(_parseDouble(_bilan!['resultat']))}',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: _bilan!['resultat'] >= 0
+                      color: _parseDouble(_bilan!['resultat']) >= 0
                           ? Colors.green
                           : Colors.red,
                     ),

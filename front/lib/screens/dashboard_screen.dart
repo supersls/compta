@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../services/facture_service_http.dart';
 import '../services/banque_service.dart';
 import '../services/tva_service.dart';
@@ -125,7 +126,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildKPICards() {
     return Column(
       children: [
-        // Row 1: CA et Charges
+        // Graphique pie chart
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Répartition financière',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  height: 250,
+                  child: _buildPieChart(),
+                ),
+                const SizedBox(height: 16),
+                _buildLegend(),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        // Row: CA et Charges
         Row(
           children: [
             Expanded(
@@ -148,27 +174,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ],
         ),
         const SizedBox(height: 16),
-        // Row 2: Bénéfice et Trésorerie
-        Row(
-          children: [
-            Expanded(
-              child: _KPICard(
-                title: 'Bénéfice',
-                value: AppFormatters.formatMontant(_benefice),
-                icon: Icons.account_balance,
-                color: _benefice >= 0 ? Colors.blue : Colors.red,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: _KPICard(
-                title: 'Trésorerie',
-                value: AppFormatters.formatMontant(_tresorerie),
-                icon: Icons.euro,
-                color: _tresorerie >= 0 ? Colors.purple : Colors.red,
-              ),
-            ),
-          ],
+        // Bénéfice uniquement
+        _KPICard(
+          title: 'Bénéfice',
+          value: AppFormatters.formatMontant(_benefice),
+          icon: Icons.account_balance,
+          color: _benefice >= 0 ? Colors.blue : Colors.red,
         ),
       ],
     );
@@ -266,7 +277,89 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     );
   }
+
+  Widget _buildPieChart() {
+    final total = _chiffreAffaires + _charges.abs();
+    
+    if (total == 0) {
+      return Center(
+        child: Text(
+          'Aucune donnée disponible',
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            color: Colors.grey,
+          ),
+        ),
+      );
+    }
+
+    return PieChart(
+      PieChartData(
+        sectionsSpace: 2,
+        centerSpaceRadius: 60,
+        sections: [
+          PieChartSectionData(
+            value: _chiffreAffaires,
+            title: '${(_chiffreAffaires / total * 100).toStringAsFixed(1)}%',
+            color: Colors.green,
+            radius: 80,
+            titleStyle: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          PieChartSectionData(
+            value: _charges.abs(),
+            title: '${(_charges.abs() / total * 100).toStringAsFixed(1)}%',
+            color: Colors.orange,
+            radius: 80,
+            titleStyle: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          if (_benefice > 0)
+            PieChartSectionData(
+              value: _benefice,
+              title: '${(_benefice / total * 100).toStringAsFixed(1)}%',
+              color: Colors.blue,
+              radius: 80,
+              titleStyle: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLegend() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        _LegendItem(
+          color: Colors.green,
+          label: 'Chiffre d\'affaires',
+          value: AppFormatters.formatMontant(_chiffreAffaires),
+        ),
+        _LegendItem(
+          color: Colors.orange,
+          label: 'Charges',
+          value: AppFormatters.formatMontant(_charges),
+        ),
+        _LegendItem(
+          color: _benefice >= 0 ? Colors.blue : Colors.red,
+          label: 'Bénéfice',
+          value: AppFormatters.formatMontant(_benefice),
+        ),
+      ],
+    );
+  }
 }
+
 
 class _KPICard extends StatelessWidget {
   final String title;
@@ -387,6 +480,51 @@ class _ResumeItem extends StatelessWidget {
         Text(
           value,
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _LegendItem extends StatelessWidget {
+  final Color color;
+  final String label;
+  final String value;
+
+  const _LegendItem({
+    required this.color,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 16,
+              height: 16,
+              decoration: BoxDecoration(
+                color: color,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             fontWeight: FontWeight.bold,
           ),
         ),

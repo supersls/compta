@@ -16,9 +16,11 @@ class _FacturesListScreenState extends State<FacturesListScreen> {
   final FactureService _factureService = FactureService();
   List<Facture> _factures = [];
   List<Facture> _facturesFiltered = [];
+  List<String> _clientsFournisseurs = [];
   bool _isLoading = true;
   String _typeFilter = 'tous';
   String _statutFilter = 'tous';
+  String _clientFilter = 'tous';
   String _searchQuery = '';
 
   @override
@@ -31,8 +33,18 @@ class _FacturesListScreenState extends State<FacturesListScreen> {
     setState(() => _isLoading = true);
     try {
       final factures = await _factureService.getAllFactures();
+      
+      // Extract unique clients/fournisseurs
+      final clientsSet = factures
+          .map((f) => f.clientFournisseur)
+          .where((name) => name.isNotEmpty)
+          .toSet()
+          .toList();
+      clientsSet.sort();
+      
       setState(() {
         _factures = factures;
+        _clientsFournisseurs = clientsSet;
         _applyFilters();
         _isLoading = false;
       });
@@ -55,6 +67,11 @@ class _FacturesListScreenState extends State<FacturesListScreen> {
       
       // Filtre par statut
       if (_statutFilter != 'tous' && facture.statut != _statutFilter) {
+        return false;
+      }
+      
+      // Filtre par client/fournisseur
+      if (_clientFilter != 'tous' && facture.clientFournisseur != _clientFilter) {
         return false;
       }
       
@@ -168,6 +185,34 @@ class _FacturesListScreenState extends State<FacturesListScreen> {
               ),
             ],
           ),
+          const SizedBox(height: 16),
+          // Filtre par client/fournisseur
+          DropdownButtonFormField<String>(
+            value: _clientFilter,
+            decoration: const InputDecoration(
+              labelText: 'Client / Fournisseur',
+              prefixIcon: Icon(Icons.person_outline),
+            ),
+            isExpanded: true,
+            items: [
+              const DropdownMenuItem(value: 'tous', child: Text('Tous les clients/fournisseurs')),
+              ..._clientsFournisseurs.map((client) => 
+                DropdownMenuItem(
+                  value: client,
+                  child: Text(
+                    client,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+            ],
+            onChanged: (value) {
+              setState(() {
+                _clientFilter = value!;
+                _applyFilters();
+              });
+            },
+          ),
           const SizedBox(height: 8),
           // Compteur
           Row(
@@ -184,6 +229,7 @@ class _FacturesListScreenState extends State<FacturesListScreen> {
                   setState(() {
                     _typeFilter = 'tous';
                     _statutFilter = 'tous';
+                    _clientFilter = 'tous';
                     _searchQuery = '';
                     _applyFilters();
                   });

@@ -25,6 +25,25 @@ CREATE TABLE IF NOT EXISTS entreprise (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS clients (
+  id SERIAL PRIMARY KEY,
+  nom VARCHAR(255) NOT NULL,
+  siret VARCHAR(14),
+  adresse TEXT,
+  code_postal VARCHAR(10),
+  ville VARCHAR(100),
+  pays VARCHAR(100) DEFAULT 'France',
+  email VARCHAR(255),
+  telephone VARCHAR(20),
+  contact_principal VARCHAR(255),
+  tva_intracommunautaire VARCHAR(20),
+  conditions_paiement VARCHAR(50),
+  notes TEXT,
+  actif BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS factures (
   id SERIAL PRIMARY KEY,
   numero VARCHAR(50) UNIQUE NOT NULL,
@@ -246,6 +265,109 @@ VALUES (
   '2025-12-31'
 )
 ON CONFLICT (siret) DO NOTHING;
+
+-- Insert sample immobilisations
+INSERT INTO immobilisations (libelle, type, date_acquisition, valeur_acquisition, duree_amortissement, methode_amortissement, taux_amortissement, compte_immobilisation, compte_amortissement, en_service)
+VALUES
+  ('Ordinateur portable Dell XPS', 'materiel', '2024-01-15', 1500.00, 3, 'lineaire', 33.33, '2183', '28183', true),
+  ('Véhicule utilitaire Renault', 'vehicule', '2023-06-01', 25000.00, 5, 'lineaire', 20.00, '2182', '28182', true),
+  ('Photocopieur professionnel', 'materiel', '2024-03-20', 3500.00, 5, 'lineaire', 20.00, '2183', '28183', true),
+  ('Bureau ergonomique', 'mobilier', '2024-02-10', 800.00, 10, 'lineaire', 10.00, '2184', '28183', true),
+  ('Serveur informatique', 'materiel', '2023-09-01', 8000.00, 3, 'lineaire', 33.33, '2183', '28183', true)
+ON CONFLICT DO NOTHING;
+
+-- Insert sample bank accounts
+INSERT INTO comptes_bancaires (nom, banque, numero_compte, iban, solde_initial, solde_actuel, date_ouverture, actif)
+VALUES
+  ('Compte Courant Principal', 'BNP Paribas', '30004012345678901', 'FR7630004012345678901234567', 5000.00, 12500.00, '2023-01-10', true),
+  ('Compte Professionnel', 'Crédit Agricole', '12345678901234567', 'FR7612345678901234567890123', 10000.00, 8750.00, '2023-01-15', true),
+  ('Compte Épargne', 'Société Générale', '98765432109876543', 'FR7698765432109876543210987', 20000.00, 22300.00, '2023-02-01', true)
+ON CONFLICT DO NOTHING;
+
+-- Insert sample bank transactions
+INSERT INTO transactions_bancaires (compte_bancaire_id, date_transaction, libelle, debit, credit, solde, categorie, rapproche)
+VALUES
+  (1, '2025-12-01', 'Virement salaire', 0, 3500.00, 8500.00, 'Revenus', true),
+  (1, '2025-12-02', 'Loyer bureau', 1200.00, 0, 7300.00, 'Loyer', true),
+  (1, '2025-12-05', 'Facture électricité', 150.00, 0, 7150.00, 'Charges', true),
+  (1, '2025-12-08', 'Vente prestation', 0, 2500.00, 9650.00, 'Ventes', true),
+  (1, '2025-12-10', 'Fournitures bureau', 85.50, 0, 9564.50, 'Achats', true),
+  (1, '2025-12-12', 'Paiement fournisseur', 450.00, 0, 9114.50, 'Achats', true),
+  (1, '2025-12-14', 'Vente prestation', 0, 3385.50, 12500.00, 'Ventes', true),
+  (2, '2025-12-01', 'Virement initial', 0, 5000.00, 15000.00, 'Apport', true),
+  (2, '2025-12-03', 'Achat matériel', 1500.00, 0, 13500.00, 'Investissement', true),
+  (2, '2025-12-07', 'Paiement assurance', 850.00, 0, 12650.00, 'Assurance', true),
+  (2, '2025-12-11', 'Remboursement TVA', 0, 1200.00, 13850.00, 'TVA', true),
+  (2, '2025-12-13', 'Services bancaires', 25.00, 0, 13825.00, 'Frais bancaires', true),
+  (3, '2025-11-30', 'Virement épargne', 0, 2000.00, 22000.00, 'Épargne', true),
+  (3, '2025-12-10', 'Intérêts', 0, 300.00, 22300.00, 'Produits financiers', true)
+ON CONFLICT DO NOTHING;
+
+-- Insert sample accounting entries
+INSERT INTO ecritures_comptables (numero_piece, date_ecriture, journal, compte, libelle, debit, credit, validee)
+VALUES
+  -- Ventes de décembre 2025
+  ('VT-2025-001', '2025-12-01', 'VE', '411', 'Client - Prestation de service', 3000.00, 0, true),
+  ('VT-2025-001', '2025-12-01', 'VE', '706', 'Prestations de services', 0, 2500.00, true),
+  ('VT-2025-001', '2025-12-01', 'VE', '4457', 'TVA collectée', 0, 500.00, true),
+  
+  ('VT-2025-002', '2025-12-08', 'VE', '411', 'Client - Vente marchandises', 4800.00, 0, true),
+  ('VT-2025-002', '2025-12-08', 'VE', '707', 'Ventes de marchandises', 0, 4000.00, true),
+  ('VT-2025-002', '2025-12-08', 'VE', '4457', 'TVA collectée', 0, 800.00, true),
+  
+  ('VT-2025-003', '2025-12-14', 'VE', '411', 'Client - Prestation conseil', 4062.30, 0, true),
+  ('VT-2025-003', '2025-12-14', 'VE', '706', 'Prestations de services', 0, 3385.25, true),
+  ('VT-2025-003', '2025-12-14', 'VE', '4457', 'TVA collectée', 0, 677.05, true),
+  
+  -- Achats et charges
+  ('AC-2025-001', '2025-12-02', 'AC', '613', 'Locations', 1200.00, 0, true),
+  ('AC-2025-001', '2025-12-02', 'AC', '401', 'Fournisseurs', 0, 1200.00, true),
+  
+  ('AC-2025-002', '2025-12-03', 'AC', '607', 'Achats de marchandises', 1250.00, 0, true),
+  ('AC-2025-002', '2025-12-03', 'AC', '4456', 'TVA déductible', 250.00, 0, true),
+  ('AC-2025-002', '2025-12-03', 'AC', '401', 'Fournisseurs', 0, 1500.00, true),
+  
+  ('AC-2025-003', '2025-12-05', 'AC', '615', 'Entretien et réparations', 150.00, 0, true),
+  ('AC-2025-003', '2025-12-05', 'AC', '512', 'Banque', 0, 150.00, true),
+  
+  ('AC-2025-004', '2025-12-07', 'AC', '616', 'Assurances', 850.00, 0, true),
+  ('AC-2025-004', '2025-12-07', 'AC', '512', 'Banque', 0, 850.00, true),
+  
+  ('AC-2025-005', '2025-12-10', 'AC', '607', 'Achats de marchandises', 71.25, 0, true),
+  ('AC-2025-005', '2025-12-10', 'AC', '4456', 'TVA déductible', 14.25, 0, true),
+  ('AC-2025-005', '2025-12-10', 'AC', '512', 'Banque', 0, 85.50, true),
+  
+  ('AC-2025-006', '2025-12-12', 'AC', '601', 'Achats de matières premières', 375.00, 0, true),
+  ('AC-2025-006', '2025-12-12', 'AC', '4456', 'TVA déductible', 75.00, 0, true),
+  ('AC-2025-006', '2025-12-12', 'AC', '401', 'Fournisseurs', 0, 450.00, true),
+  
+  ('AC-2025-007', '2025-12-13', 'AC', '627', 'Services bancaires', 25.00, 0, true),
+  ('AC-2025-007', '2025-12-13', 'AC', '512', 'Banque', 0, 25.00, true),
+  
+  -- Salaires
+  ('SA-2025-001', '2025-12-01', 'OD', '621', 'Personnel', 3500.00, 0, true),
+  ('SA-2025-001', '2025-12-01', 'OD', '512', 'Banque', 0, 3500.00, true),
+  
+  -- Ventes novembre 2025 (pour avoir plus de données)
+  ('VT-2025-N01', '2025-11-05', 'VE', '411', 'Client - Vente', 3600.00, 0, true),
+  ('VT-2025-N01', '2025-11-05', 'VE', '707', 'Ventes de marchandises', 0, 3000.00, true),
+  ('VT-2025-N01', '2025-11-05', 'VE', '4457', 'TVA collectée', 0, 600.00, true),
+  
+  ('VT-2025-N02', '2025-11-15', 'VE', '411', 'Client - Prestation', 2400.00, 0, true),
+  ('VT-2025-N02', '2025-11-15', 'VE', '706', 'Prestations de services', 0, 2000.00, true),
+  ('VT-2025-N02', '2025-11-15', 'VE', '4457', 'TVA collectée', 0, 400.00, true),
+  
+  -- Charges novembre 2025
+  ('AC-2025-N01', '2025-11-02', 'AC', '613', 'Locations', 1200.00, 0, true),
+  ('AC-2025-N01', '2025-11-02', 'AC', '401', 'Fournisseurs', 0, 1200.00, true),
+  
+  ('AC-2025-N02', '2025-11-10', 'AC', '607', 'Achats de marchandises', 800.00, 0, true),
+  ('AC-2025-N02', '2025-11-10', 'AC', '4456', 'TVA déductible', 160.00, 0, true),
+  ('AC-2025-N02', '2025-11-10', 'AC', '401', 'Fournisseurs', 0, 960.00, true),
+  
+  ('SA-2025-N01', '2025-11-01', 'OD', '621', 'Personnel', 3500.00, 0, true),
+  ('SA-2025-N01', '2025-11-01', 'OD', '512', 'Banque', 0, 3500.00, true)
+ON CONFLICT DO NOTHING;
 
 -- Trigger pour mettre à jour updated_at
 CREATE OR REPLACE FUNCTION update_updated_at_column()

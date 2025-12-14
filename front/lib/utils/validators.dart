@@ -206,3 +206,33 @@ class AppValidators {
     return value.replaceAll(RegExp(r'\s'), '').toUpperCase();
   }
 }
+
+// Alias pour compatibilité
+class Validators {
+  static String? required(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Ce champ est requis';
+    }
+    return null;
+  }
+
+  static String? email(String? value) {
+    return AppValidators.validateEmail(value);
+  }
+
+  static String? siret(String? value) {
+    return AppValidators.validateSIRET(value);
+  }
+
+  static String? telephone(String? value) {
+    return AppValidators.validateTelephone(value);
+  }
+
+  static String? iban(String? value) {
+    return AppValidators.validateIBAN(value);
+  }
+
+  static String? montant(String? value, {bool obligatoire = true}) {
+    return AppValidators.validateMontant(value, obligatoire: obligatoire);
+  }
+}

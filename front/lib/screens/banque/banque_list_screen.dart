@@ -50,6 +50,20 @@ class _BanqueListScreenState extends State<BanqueListScreen> {
     }
   }
 
+  double? _parseDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    return null;
+  }
+
+  int? _parseInt(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value);
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -85,9 +99,11 @@ class _BanqueListScreenState extends State<BanqueListScreen> {
   }
 
   Widget _buildStatistiques() {
-    final soldeTotal = (_statistiques!['solde_total'] as num?)?.toDouble() ?? 0;
-    final nbComptes = (_statistiques!['nombre_comptes'] as num?)?.toInt() ?? 0;
-    final nbTransactions = (_statistiques!['nombre_transactions'] as num?)?.toInt() ?? 0;
+    final soldeTotal = _parseDouble(_statistiques!['solde_total']) ?? 
+                       _parseDouble(_statistiques!['totalTresorerie']) ?? 0.0;
+    final nbComptes = _parseInt(_statistiques!['nombre_comptes']) ?? 
+                      _parseInt(_statistiques!['totalComptes']) ?? 0;
+    final nbTransactions = _parseInt(_statistiques!['nombre_transactions']) ?? 0;
 
     return Column(
       children: [

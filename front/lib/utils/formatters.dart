@@ -115,3 +115,22 @@ class AppFormatters {
     return mois >= 1 && mois <= 12 ? mois_fr[mois - 1] : '';
   }
 }
+
+// Alias pour compatibilité
+class Formatters {
+  static String currency(double montant) {
+    return AppFormatters.formatMontant(montant);
+  }
+
+  static String date(DateTime date) {
+    return AppFormatters.formatDate(date);
+  }
+
+  static String dateTime(DateTime dateTime) {
+    return AppFormatters.formatDateTime(dateTime);
+  }
+
+  static String percentage(double valeur) {
+    return AppFormatters.formatPourcentage(valeur);
+  }
+}
