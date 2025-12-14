@@ -394,10 +394,27 @@ class _CompteBancaireDetailScreenState extends State<CompteBancaireDetailScreen>
       return const Center(child: CircularProgressIndicator());
     }
 
-    final totalCredits = (_statistiques!['total_credits'] as num?)?.toDouble() ?? 0;
-    final totalDebits = (_statistiques!['total_debits'] as num?)?.toDouble() ?? 0;
-    final nbTransactions = (_statistiques!['nombre_transactions'] as num?)?.toInt() ?? 0;
-    final nbRapprochees = (_statistiques!['nombre_rapprochees'] as num?)?.toInt() ?? 0;
+    // Helper pour convertir les valeurs (qui peuvent être String, int, ou double)
+    double _toDouble(dynamic value) {
+      if (value == null) return 0;
+      if (value is double) return value;
+      if (value is int) return value.toDouble();
+      if (value is String) return double.tryParse(value) ?? 0;
+      return 0;
+    }
+
+    int _toInt(dynamic value) {
+      if (value == null) return 0;
+      if (value is int) return value;
+      if (value is double) return value.toInt();
+      if (value is String) return int.tryParse(value) ?? 0;
+      return 0;
+    }
+
+    final totalCredits = _toDouble(_statistiques!['total_credits']);
+    final totalDebits = _toDouble(_statistiques!['total_debits']);
+    final nbTransactions = _toInt(_statistiques!['nombre_transactions']);
+    final nbRapprochees = _toInt(_statistiques!['nombre_rapprochees']);
 
     return ListView(
       padding: const EdgeInsets.all(16),

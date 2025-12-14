@@ -54,15 +54,26 @@ class _CompteResultatScreenState extends State<CompteResultatScreen> {
   }
 
   Future<void> _exportPDF() async {
+    if (_compteResultat == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Aucune donnée à exporter'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
     try {
       await _service.exportPDF('compte-resultat', {
         'debut': _dateDebut.toIso8601String(),
         'fin': _dateFin.toIso8601String(),
       });
+      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Export PDF en cours...'),
+            content: Text('PDF généré avec succès'),
             backgroundColor: Colors.green,
           ),
         );

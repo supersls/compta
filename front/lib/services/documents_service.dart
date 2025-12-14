@@ -1,5 +1,7 @@
 import '../services/api_service.dart';
 import '../models/ecriture_comptable.dart';
+import '../config/api_config.dart';
+import '../utils/url_helper.dart';
 
 class DocumentsService {
   // Journal Comptable
@@ -60,20 +62,30 @@ class DocumentsService {
 
   // Export PDF
   Future<void> exportPDF(String documentType, Map<String, dynamic> params) async {
-    final response = await ApiService.downloadFile(
-      'documents/export/pdf/$documentType',
-      queryParams: params,
-    );
-    // Le téléchargement sera géré par le navigateur
+    try {
+      // Construire l'URL avec les paramètres
+      final uri = Uri.parse('${ApiConfig.baseUrl}/documents/export/pdf/$documentType')
+          .replace(queryParameters: params.map((key, value) => MapEntry(key, value.toString())));
+      
+      // Ouvrir dans un nouvel onglet pour télécharger le PDF
+      UrlHelper.openInNewTab(uri.toString());
+    } catch (e) {
+      rethrow;
+    }
   }
 
   // Export Excel
   Future<void> exportExcel(String documentType, Map<String, dynamic> params) async {
-    final response = await ApiService.downloadFile(
-      'documents/export/excel/$documentType',
-      queryParams: params,
-    );
-    // Le téléchargement sera géré par le navigateur
+    try {
+      // Construire l'URL avec les paramètres
+      final uri = Uri.parse('${ApiConfig.baseUrl}/documents/export/excel/$documentType')
+          .replace(queryParameters: params.map((key, value) => MapEntry(key, value.toString())));
+      
+      // Ouvrir dans un nouvel onglet pour télécharger l'Excel
+      UrlHelper.openInNewTab(uri.toString());
+    } catch (e) {
+      rethrow;
+    }
   }
 
   // Balance des comptes
