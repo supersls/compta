@@ -17,8 +17,8 @@ fi
 
 # Arrêter les conteneurs existants
 if $REBUILD; then
-  echo "⏹️  Arrêt des conteneurs..."
-  docker-compose down
+  echo "⏹️  Arrêt des conteneurs et suppression des volumes..."
+  docker-compose down -v
   
   # Supprimer l'image backend
   echo "🗑️  Suppression de l'image backend..."

@@ -2,67 +2,193 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../config/database');
 
-// GET informations entreprise
+// Récupérer toutes les entreprises
 router.get('/', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM entreprise LIMIT 1');
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Informations entreprise non trouvées' });
-    }
-    
-    res.json(result.rows[0]);
+    const query = `
+      SELECT 
+        id,
+        nom,
+        siret,
+        adresse,
+        code_postal,
+        ville,
+        email,
+        telephone,
+        regime_tva,
+        date_cloture_exercice,
+        created_at
+      FROM entreprise
+      ORDER BY nom ASC
+    `;
+
+    const result = await pool.query(query);
+    res.json(result.rows);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Erreur lors de la récupération des informations' });
+    res.status(500).json({ error: 'Erreur lors de la récupération des entreprises' });
   }
 });
 
-// POST/PUT créer ou mettre à jour entreprise
-router.post('/', async (req, res) => {
+// Récupérer une entreprise par ID
+router.get('/:id', async (req, res) => {
   try {
-    const {
-      nom, forme_juridique, siret, adresse, code_postal, ville,
-      telephone, email, regime_tva, debut_exercice, fin_exercice
-    } = req.body;
-    
-    // Vérifier si existe déjà
-    const existing = await pool.query('SELECT id FROM entreprise LIMIT 1');
-    
-    let result;
-    if (existing.rows.length > 0) {
-      // Update
-      result = await pool.query(`
-        UPDATE entreprise SET
-          nom = $1, forme_juridique = $2, siret = $3, adresse = $4,
-          code_postal = $5, ville = $6, telephone = $7, email = $8,
-          regime_tva = $9, debut_exercice = $10, fin_exercice = $11,
-          updated_at = CURRENT_TIMESTAMP
-        WHERE id = $12
-        RETURNING *
-      `, [
-        nom, forme_juridique, siret, adresse, code_postal, ville,
-        telephone, email, regime_tva, debut_exercice, fin_exercice,
-        existing.rows[0].id
-      ]);
-    } else {
-      // Insert
-      result = await pool.query(`
-        INSERT INTO entreprise (
-          nom, forme_juridique, siret, adresse, code_postal, ville,
-          telephone, email, regime_tva, debut_exercice, fin_exercice
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-        RETURNING *
-      `, [
-        nom, forme_juridique, siret, adresse, code_postal, ville,
-        telephone, email, regime_tva, debut_exercice, fin_exercice
-      ]);
+    const { id } = req.params;
+
+    const query = `
+      SELECT 
+        id,
+        nom,
+        siret,
+        adresse,
+        code_postal,
+        ville,
+        email,
+        telephone,
+        regime_tva,
+        date_cloture_exercice,
+        created_at
+      FROM entreprise
+      WHERE id = $1
+    `;
+
+    const result = await pool.query(query, [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Entreprise non trouvée' });
     }
-    
+
     res.json(result.rows[0]);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Erreur lors de la sauvegarde des informations' });
+    res.status(500).json({ error: 'Erreur lors de la récupération de l\'entreprise' });
+  }
+});
+
+// Créer une nouvelle entreprise
+router.post('/', async (req, res) => {
+  try {
+    const {
+      nom,
+      siret,
+      adresse,
+      code_postal,
+      ville,
+      email,
+      telephone,
+      regime_tva,
+      date_cloture_exercice
+    } = req.body;
+
+    const query = `
+      INSERT INTO entreprise (
+        nom, siret, adresse, code_postal, ville,
+        email, telephone, regime_tva, date_cloture_exercice
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      RETURNING *
+    `;
+
+    const values = [
+      nom,
+      siret,
+      adresse,
+      code_postal,
+      ville,
+      email,
+      telephone,
+      regime_tva || 'reel_normal',
+      date_cloture_exercice
+    ];
+
+    const result = await pool.query(query, values);
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    if (err.code === '23505') {
+      return res.status(400).json({ error: 'Une entreprise avec ce SIRET existe déjà' });
+    }
+    res.status(500).json({ error: 'Erreur lors de la création de l\'entreprise' });
+  }
+});
+
+// Mettre à jour une entreprise
+router.put('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      nom,
+      siret,
+      adresse,
+      code_postal,
+      ville,
+      email,
+      telephone,
+      regime_tva,
+      date_cloture_exercice
+    } = req.body;
+
+    const query = `
+      UPDATE entreprise
+      SET 
+        nom = $1,
+        siret = $2,
+        adresse = $3,
+        code_postal = $4,
+        ville = $5,
+        email = $6,
+        telephone = $7,
+        regime_tva = $8,
+        date_cloture_exercice = $9
+      WHERE id = $10
+      RETURNING *
+    `;
+
+    const values = [
+      nom,
+      siret,
+      adresse,
+      code_postal,
+      ville,
+      email,
+      telephone,
+      regime_tva,
+      date_cloture_exercice,
+      id
+    ];
+
+    const result = await pool.query(query, values);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Entreprise non trouvée' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    if (err.code === '23505') {
+      return res.status(400).json({ error: 'Une entreprise avec ce SIRET existe déjà' });
+    }
+    res.status(500).json({ error: 'Erreur lors de la mise à jour de l\'entreprise' });
+  }
+});
+
+// Supprimer une entreprise
+router.delete('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const query = 'DELETE FROM entreprise WHERE id = $1 RETURNING id';
+    const result = await pool.query(query, [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Entreprise non trouvée' });
+    }
+
+    res.json({ message: 'Entreprise supprimée avec succès' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur lors de la suppression de l\'entreprise' });
   }
 });
 

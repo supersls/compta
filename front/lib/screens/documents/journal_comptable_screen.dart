@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../models/ecriture_comptable.dart';
 import '../../services/documents_service.dart';
+import '../../providers/entreprise_provider.dart';
 import '../../utils/formatters.dart';
+import 'ecriture_form_screen.dart';
 
 class JournalComptableScreen extends StatefulWidget {
   const JournalComptableScreen({super.key});
@@ -36,7 +39,13 @@ class _JournalComptableScreenState extends State<JournalComptableScreen> {
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     try {
+      final entrepriseId = Provider.of<EntrepriseProvider>(context, listen: false).selectedEntreprise?.id;
+      if (entrepriseId == null) {
+        throw Exception('Aucune entreprise sélectionnée');
+      }
+      
       final ecritures = await _service.getJournalComptable(
+        entrepriseId: entrepriseId,
         debut: _dateDebut,
         fin: _dateFin,
         journal: _journalFilter,
@@ -311,6 +320,22 @@ class _JournalComptableScreenState extends State<JournalComptableScreen> {
                       ),
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const EcritureFormScreen(),
+            ),
+          );
+          // Si l'écriture a été créée avec succès, recharger les données
+          if (result == true && mounted) {
+            _loadData();
+          }
+        },
+        tooltip: 'Ajouter une écriture',
+        child: const Icon(Icons.add),
       ),
     );
   }

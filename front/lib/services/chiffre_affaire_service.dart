@@ -2,8 +2,10 @@ import '../services/api_service.dart';
 
 class ChiffreAffaireService {
   // Récupérer le CA mensuel
-  Future<List<Map<String, dynamic>>> getCaMensuel({String? exercice}) async {
-    final params = <String, dynamic>{};
+  Future<List<Map<String, dynamic>>> getCaMensuel({required int entrepriseId, String? exercice}) async {
+    final params = <String, dynamic>{
+      'entreprise_id': entrepriseId,
+    };
     if (exercice != null) {
       params['exercice'] = exercice;
     }
@@ -13,8 +15,10 @@ class ChiffreAffaireService {
   }
 
   // Récupérer les statistiques globales
-  Future<Map<String, dynamic>> getStatistiques({String? exercice}) async {
-    final params = <String, dynamic>{};
+  Future<Map<String, dynamic>> getStatistiques({required int entrepriseId, String? exercice}) async {
+    final params = <String, dynamic>{
+      'entreprise_id': entrepriseId,
+    };
     if (exercice != null) {
       params['exercice'] = exercice;
     }
@@ -23,14 +27,16 @@ class ChiffreAffaireService {
   }
 
   // Récupérer les exercices disponibles
-  Future<List<int>> getExercices() async {
-    final data = await ApiService.get('chiffre-affaire/exercices');
+  Future<List<int>> getExercices(int entrepriseId) async {
+    final data = await ApiService.get('chiffre-affaire/exercices', queryParams: {'entreprise_id': entrepriseId});
     return List<int>.from(data);
   }
 
   // Récupérer le CA par client
-  Future<List<Map<String, dynamic>>> getCaParClient({String? exercice}) async {
-    final params = <String, dynamic>{};
+  Future<List<Map<String, dynamic>>> getCaParClient({required int entrepriseId, String? exercice}) async {
+    final params = <String, dynamic>{
+      'entreprise_id': entrepriseId,
+    };
     if (exercice != null) {
       params['exercice'] = exercice;
     }

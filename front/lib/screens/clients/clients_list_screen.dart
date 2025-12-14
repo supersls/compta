@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../models/client.dart';
 import '../../services/client_service.dart';
+import '../../providers/entreprise_provider.dart';
 import 'client_form_screen.dart';
 import 'client_detail_screen.dart';
 
@@ -28,7 +30,11 @@ class _ClientsListScreenState extends State<ClientsListScreen> {
   Future<void> _loadClients() async {
     setState(() => _isLoading = true);
     try {
-      final clients = await _clientService.getAllClients();
+      final entrepriseId = Provider.of<EntrepriseProvider>(context, listen: false).selectedEntreprise?.id;
+      if (entrepriseId == null) {
+        throw Exception('Aucune entreprise sélectionnée');
+      }
+      final clients = await _clientService.getAllClients(entrepriseId);
       setState(() {
         _clients = clients;
         _applyFilters();

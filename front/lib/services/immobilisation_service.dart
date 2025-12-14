@@ -3,8 +3,8 @@ import '../models/immobilisation.dart';
 
 class ImmobilisationService {
   // GET toutes les immobilisations
-  Future<List<Immobilisation>> getAllImmobilisations() async {
-    final data = await ApiService.get('immobilisations');
+  Future<List<Immobilisation>> getAllImmobilisations(int entrepriseId) async {
+    final data = await ApiService.get('immobilisations', queryParams: {'entreprise_id': entrepriseId});
     return (data as List).map((item) => Immobilisation.fromMap(item)).toList();
   }
 
@@ -64,8 +64,8 @@ class ImmobilisationService {
   }
 
   // GET statistiques
-  Future<Map<String, dynamic>> getStatistiques() async {
-    return await ApiService.get('immobilisations/statistiques');
+  Future<Map<String, dynamic>> getStatistiques(int entrepriseId) async {
+    return await ApiService.get('immobilisations/statistiques', queryParams: {'entreprise_id': entrepriseId});
   }
 
   // GET immobilisations par catégorie

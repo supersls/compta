@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../models/banque.dart';
 import '../../services/banque_service.dart';
 import '../../utils/formatters.dart';
+import '../../providers/entreprise_provider.dart';
 import 'compte_bancaire_form_screen.dart';
 import 'compte_bancaire_detail_screen.dart';
 
@@ -29,8 +31,12 @@ class _BanqueListScreenState extends State<BanqueListScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final comptes = await _service.getAllComptes();
-      final statistiques = await _service.getStatistiques();
+      final entrepriseId = Provider.of<EntrepriseProvider>(context, listen: false).selectedEntreprise?.id;
+      if (entrepriseId == null) {
+        throw Exception('Aucune entreprise sélectionnée');
+      }
+      final comptes = await _service.getAllComptes(entrepriseId);
+      final statistiques = await _service.getStatistiques(entrepriseId);
 
       setState(() {
         _comptes = comptes;

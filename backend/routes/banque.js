@@ -5,7 +5,16 @@ const pool = require('../config/database');
 // GET comptes bancaires
 router.get('/comptes', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM comptes_bancaires ORDER BY nom');
+    const { entreprise_id } = req.query;
+    
+    if (!entreprise_id) {
+      return res.status(400).json({ error: 'entreprise_id est requis' });
+    }
+    
+    const result = await pool.query(
+      'SELECT * FROM comptes_bancaires WHERE entreprise_id = $1 ORDER BY nom',
+      [entreprise_id]
+    );
     res.json(result.rows);
   } catch (err) {
     console.error(err);
@@ -16,12 +25,19 @@ router.get('/comptes', async (req, res) => {
 // GET transactions
 router.get('/transactions', async (req, res) => {
   try {
+    const { entreprise_id } = req.query;
+    
+    if (!entreprise_id) {
+      return res.status(400).json({ error: 'entreprise_id est requis' });
+    }
+    
     const result = await pool.query(`
       SELECT t.*, c.nom as compte_nom 
       FROM transactions_bancaires t
       LEFT JOIN comptes_bancaires c ON t.compte_bancaire_id = c.id
+      WHERE c.entreprise_id = $1
       ORDER BY t.date_transaction DESC
-    `);
+    `, [entreprise_id]);
     res.json(result.rows);
   } catch (err) {
     console.error(err);
@@ -47,13 +63,17 @@ router.get('/comptes/:id/transactions', async (req, res) => {
 // POST créer compte bancaire
 router.post('/comptes', async (req, res) => {
   try {
-    const { nom, banque, numero_compte, iban, solde_initial } = req.body;
+    const { entreprise_id, nom, banque, numero_compte, iban, solde_initial } = req.body;
+    
+    if (!entreprise_id) {
+      return res.status(400).json({ error: 'entreprise_id est requis' });
+    }
     
     const result = await pool.query(`
-      INSERT INTO comptes_bancaires (nom, banque, numero_compte, iban, solde_initial, solde_actuel)
-      VALUES ($1, $2, $3, $4, $5, $5)
+      INSERT INTO comptes_bancaires (entreprise_id, nom, banque, numero_compte, iban, solde_initial, solde_actuel)
+      VALUES ($1, $2, $3, $4, $5, $6, $6)
       RETURNING *
-    `, [nom, banque, numero_compte, iban, solde_initial || 0]);
+    `, [entreprise_id, nom, banque, numero_compte, iban, solde_initial || 0]);
     
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -318,6 +338,12 @@ router.get('/comptes/:id/non-rapprochees', async (req, res) => {
 // GET statistiques banque
 router.get('/statistiques', async (req, res) => {
   try {
+    const { entreprise_id } = req.query;
+    
+    if (!entreprise_id) {
+      return res.status(400).json({ error: 'entreprise_id est requis' });
+    }
+    
     const result = await pool.query(`
       SELECT 
         COUNT(DISTINCT cb.id) as nombre_comptes,
@@ -327,12 +353,14 @@ router.get('/statistiques', async (req, res) => {
         COALESCE(SUM(CASE WHEN tb.debit > 0 THEN tb.debit ELSE 0 END), 0) as total_debits
       FROM comptes_bancaires cb
       LEFT JOIN transactions_bancaires tb ON cb.id = tb.compte_bancaire_id
-    `);
+      WHERE cb.entreprise_id = $1
+    `, [entreprise_id]);
     
     const stats = result.rows[0];
     res.json({
       nombreComptes: parseInt(stats.nombre_comptes || 0),
       totalSoldes: parseFloat(stats.total_soldes || 0),
+      totalTresorerie: parseFloat(stats.total_soldes || 0),
       nombreTransactions: parseInt(stats.nombre_transactions || 0),
       totalCredits: parseFloat(stats.total_credits || 0),
       totalDebits: parseFloat(stats.total_debits || 0)
@@ -344,6 +372,7 @@ router.get('/statistiques', async (req, res) => {
 });
 
 module.exports = router;
+
 
 
 

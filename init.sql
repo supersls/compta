@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS entreprise (
 
 CREATE TABLE IF NOT EXISTS clients (
   id SERIAL PRIMARY KEY,
+  entreprise_id INTEGER REFERENCES entreprise(id) ON DELETE CASCADE,
   nom VARCHAR(255) NOT NULL,
   siret VARCHAR(14),
   adresse TEXT,
@@ -46,6 +47,7 @@ CREATE TABLE IF NOT EXISTS clients (
 
 CREATE TABLE IF NOT EXISTS factures (
   id SERIAL PRIMARY KEY,
+  entreprise_id INTEGER REFERENCES entreprise(id) ON DELETE CASCADE,
   numero VARCHAR(50) UNIQUE NOT NULL,
   type VARCHAR(20) NOT NULL CHECK (type IN ('vente', 'achat')),
   date_emission DATE NOT NULL,
@@ -78,6 +80,7 @@ CREATE TABLE IF NOT EXISTS paiements (
 
 CREATE TABLE IF NOT EXISTS comptes_bancaires (
   id SERIAL PRIMARY KEY,
+  entreprise_id INTEGER REFERENCES entreprise(id) ON DELETE CASCADE,
   nom VARCHAR(255) NOT NULL,
   banque VARCHAR(255),
   numero_compte VARCHAR(50),
@@ -108,6 +111,7 @@ CREATE TABLE IF NOT EXISTS transactions_bancaires (
 
 CREATE TABLE IF NOT EXISTS immobilisations (
   id SERIAL PRIMARY KEY,
+  entreprise_id INTEGER REFERENCES entreprise(id) ON DELETE CASCADE,
   libelle VARCHAR(255) NOT NULL,
   type VARCHAR(50) NOT NULL,
   date_acquisition DATE NOT NULL,
@@ -137,6 +141,7 @@ CREATE TABLE IF NOT EXISTS amortissements (
 
 CREATE TABLE IF NOT EXISTS ecritures_comptables (
   id SERIAL PRIMARY KEY,
+  entreprise_id INTEGER REFERENCES entreprise(id) ON DELETE CASCADE,
   numero_piece VARCHAR(50) NOT NULL,
   date_ecriture DATE NOT NULL,
   journal VARCHAR(20) NOT NULL,
@@ -162,16 +167,19 @@ CREATE TABLE IF NOT EXISTS comptes_pcg (
 
 CREATE TABLE IF NOT EXISTS exercices_comptables (
   id SERIAL PRIMARY KEY,
-  annee INTEGER NOT NULL UNIQUE,
+  entreprise_id INTEGER REFERENCES entreprise(id) ON DELETE CASCADE,
+  annee INTEGER NOT NULL,
   date_debut DATE NOT NULL,
   date_fin DATE NOT NULL,
   cloture BOOLEAN DEFAULT FALSE,
   date_cloture DATE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(entreprise_id, annee)
 );
 
 CREATE TABLE IF NOT EXISTS declarations_tva (
   id SERIAL PRIMARY KEY,
+  entreprise_id INTEGER REFERENCES entreprise(id) ON DELETE CASCADE,
   periode_debut DATE NOT NULL,
   periode_fin DATE NOT NULL,
   tva_collectee DECIMAL(12, 2) NOT NULL,
@@ -186,6 +194,7 @@ CREATE TABLE IF NOT EXISTS declarations_tva (
 
 CREATE TABLE IF NOT EXISTS alertes (
   id SERIAL PRIMARY KEY,
+  entreprise_id INTEGER REFERENCES entreprise(id) ON DELETE CASCADE,
   type VARCHAR(50) NOT NULL,
   titre VARCHAR(255) NOT NULL,
   message TEXT,
@@ -197,13 +206,20 @@ CREATE TABLE IF NOT EXISTS alertes (
 );
 
 -- Index pour améliorer les performances
+CREATE INDEX idx_factures_entreprise ON factures(entreprise_id);
 CREATE INDEX idx_factures_type ON factures(type);
 CREATE INDEX idx_factures_statut ON factures(statut);
 CREATE INDEX idx_factures_date_emission ON factures(date_emission);
+CREATE INDEX idx_clients_entreprise ON clients(entreprise_id);
+CREATE INDEX idx_comptes_bancaires_entreprise ON comptes_bancaires(entreprise_id);
 CREATE INDEX idx_transactions_date ON transactions_bancaires(date_transaction);
+CREATE INDEX idx_immobilisations_entreprise ON immobilisations(entreprise_id);
+CREATE INDEX idx_ecritures_entreprise ON ecritures_comptables(entreprise_id);
 CREATE INDEX idx_ecritures_journal ON ecritures_comptables(journal);
 CREATE INDEX idx_ecritures_compte ON ecritures_comptables(compte);
 CREATE INDEX idx_ecritures_date ON ecritures_comptables(date_ecriture);
+CREATE INDEX idx_declarations_tva_entreprise ON declarations_tva(entreprise_id);
+CREATE INDEX idx_alertes_entreprise ON alertes(entreprise_id);
 
 -- Peupler le Plan Comptable Général (PCG) simplifié
 INSERT INTO comptes_pcg (numero, libelle, classe, type) VALUES
@@ -252,13 +268,14 @@ INSERT INTO comptes_pcg (numero, libelle, classe, type) VALUES
 ON CONFLICT (numero) DO NOTHING;
 
 -- Insert default company data
-INSERT INTO entreprise (nom, siret, adresse, code_postal, ville, email, telephone, regime_tva, date_cloture_exercice)
+INSERT INTO entreprise (id, nom, siret, adresse, code_postal, ville, email, telephone, regime_tva, date_cloture_exercice)
 VALUES (
-  'Mon Entreprise',
+  1,
+  'LAMHAMDI SALAH EI',
   '12345678901234',
-  '1 Rue de la Comptabilité',
-  '75001',
-  'Paris',
+  '6 rue des GONDOLES',
+  '33270',
+  'FLOIRAC',
   'contact@monentreprise.fr',
   '0123456789',
   'reel_normal',
@@ -266,22 +283,20 @@ VALUES (
 )
 ON CONFLICT (siret) DO NOTHING;
 
--- Insert sample immobilisations
-INSERT INTO immobilisations (libelle, type, date_acquisition, valeur_acquisition, duree_amortissement, methode_amortissement, taux_amortissement, compte_immobilisation, compte_amortissement, en_service)
+-- Insert sample immobilisations for entreprise 1
+INSERT INTO immobilisations (entreprise_id, libelle, type, date_acquisition, valeur_acquisition, duree_amortissement, methode_amortissement, taux_amortissement, compte_immobilisation, compte_amortissement, en_service)
 VALUES
-  ('Ordinateur portable Dell XPS', 'materiel', '2024-01-15', 1500.00, 3, 'lineaire', 33.33, '2183', '28183', true),
-  ('Véhicule utilitaire Renault', 'vehicule', '2023-06-01', 25000.00, 5, 'lineaire', 20.00, '2182', '28182', true),
-  ('Photocopieur professionnel', 'materiel', '2024-03-20', 3500.00, 5, 'lineaire', 20.00, '2183', '28183', true),
-  ('Bureau ergonomique', 'mobilier', '2024-02-10', 800.00, 10, 'lineaire', 10.00, '2184', '28183', true),
-  ('Serveur informatique', 'materiel', '2023-09-01', 8000.00, 3, 'lineaire', 33.33, '2183', '28183', true)
+  (1, 'Ordinateur portable Dell XPS', 'materiel', '2024-01-15', 1500.00, 3, 'lineaire', 33.33, '2183', '28183', true),
+  (1, 'Véhicule utilitaire Renault', 'vehicule', '2023-06-01', 25000.00, 5, 'lineaire', 20.00, '2182', '28182', true),
+  (1, 'Photocopieur professionnel', 'materiel', '2024-03-20', 3500.00, 5, 'lineaire', 20.00, '2183', '28183', true),
+  (1, 'Bureau ergonomique', 'mobilier', '2024-02-10', 800.00, 10, 'lineaire', 10.00, '2184', '28183', true),
+  (1, 'Serveur informatique', 'materiel', '2023-09-01', 8000.00, 3, 'lineaire', 33.33, '2183', '28183', true)
 ON CONFLICT DO NOTHING;
 
--- Insert sample bank accounts
-INSERT INTO comptes_bancaires (nom, banque, numero_compte, iban, solde_initial, solde_actuel, date_ouverture, actif)
+-- Insert sample bank accounts for entreprise 1
+INSERT INTO comptes_bancaires (entreprise_id, nom, banque, numero_compte, iban, solde_initial, solde_actuel, date_ouverture, actif)
 VALUES
-  ('Compte Courant Principal', 'BNP Paribas', '30004012345678901', 'FR7630004012345678901234567', 5000.00, 12500.00, '2023-01-10', true),
-  ('Compte Professionnel', 'Crédit Agricole', '12345678901234567', 'FR7612345678901234567890123', 10000.00, 8750.00, '2023-01-15', true),
-  ('Compte Épargne', 'Société Générale', '98765432109876543', 'FR7698765432109876543210987', 20000.00, 22300.00, '2023-02-01', true)
+  (1, 'Compte Courant Principal', 'BNP Paribas', '30004012345678901', 'FR7630004012345678901234567', 5000.00, 12500.00, '2023-01-10', true)
 ON CONFLICT DO NOTHING;
 
 -- Insert sample bank transactions
@@ -294,79 +309,79 @@ VALUES
   (1, '2025-12-10', 'Fournitures bureau', 85.50, 0, 9564.50, 'Achats', true),
   (1, '2025-12-12', 'Paiement fournisseur', 450.00, 0, 9114.50, 'Achats', true),
   (1, '2025-12-14', 'Vente prestation', 0, 3385.50, 12500.00, 'Ventes', true),
-  (2, '2025-12-01', 'Virement initial', 0, 5000.00, 15000.00, 'Apport', true),
-  (2, '2025-12-03', 'Achat matériel', 1500.00, 0, 13500.00, 'Investissement', true),
-  (2, '2025-12-07', 'Paiement assurance', 850.00, 0, 12650.00, 'Assurance', true),
-  (2, '2025-12-11', 'Remboursement TVA', 0, 1200.00, 13850.00, 'TVA', true),
-  (2, '2025-12-13', 'Services bancaires', 25.00, 0, 13825.00, 'Frais bancaires', true),
-  (3, '2025-11-30', 'Virement épargne', 0, 2000.00, 22000.00, 'Épargne', true),
-  (3, '2025-12-10', 'Intérêts', 0, 300.00, 22300.00, 'Produits financiers', true)
+  (1, '2025-12-01', 'Virement initial', 0, 5000.00, 15000.00, 'Apport', true),
+  (1, '2025-12-03', 'Achat matériel', 1500.00, 0, 13500.00, 'Investissement', true),
+  (1, '2025-12-07', 'Paiement assurance', 850.00, 0, 12650.00, 'Assurance', true),
+  (1, '2025-12-11', 'Remboursement TVA', 0, 1200.00, 13850.00, 'TVA', true),
+  (1, '2025-12-13', 'Services bancaires', 25.00, 0, 13825.00, 'Frais bancaires', true),
+  (1, '2025-11-30', 'Virement épargne', 0, 2000.00, 22000.00, 'Épargne', true),
+  (1, '2025-12-10', 'Intérêts', 0, 300.00, 22300.00, 'Produits financiers', true)
 ON CONFLICT DO NOTHING;
 
--- Insert sample accounting entries
-INSERT INTO ecritures_comptables (numero_piece, date_ecriture, journal, compte, libelle, debit, credit, validee)
+-- Insert sample accounting entries for entreprise 1
+INSERT INTO ecritures_comptables (entreprise_id, numero_piece, date_ecriture, journal, compte, libelle, debit, credit, validee)
 VALUES
   -- Ventes de décembre 2025
-  ('VT-2025-001', '2025-12-01', 'VE', '411', 'Client - Prestation de service', 3000.00, 0, true),
-  ('VT-2025-001', '2025-12-01', 'VE', '706', 'Prestations de services', 0, 2500.00, true),
-  ('VT-2025-001', '2025-12-01', 'VE', '4457', 'TVA collectée', 0, 500.00, true),
+  (1, 'VT-2025-001', '2025-12-01', 'VE', '411', 'Client - Prestation de service', 3000.00, 0, true),
+  (1, 'VT-2025-001', '2025-12-01', 'VE', '706', 'Prestations de services', 0, 2500.00, true),
+  (1, 'VT-2025-001', '2025-12-01', 'VE', '4457', 'TVA collectée', 0, 500.00, true),
   
-  ('VT-2025-002', '2025-12-08', 'VE', '411', 'Client - Vente marchandises', 4800.00, 0, true),
-  ('VT-2025-002', '2025-12-08', 'VE', '707', 'Ventes de marchandises', 0, 4000.00, true),
-  ('VT-2025-002', '2025-12-08', 'VE', '4457', 'TVA collectée', 0, 800.00, true),
+  (1, 'VT-2025-002', '2025-12-08', 'VE', '411', 'Client - Vente marchandises', 4800.00, 0, true),
+  (1, 'VT-2025-002', '2025-12-08', 'VE', '707', 'Ventes de marchandises', 0, 4000.00, true),
+  (1, 'VT-2025-002', '2025-12-08', 'VE', '4457', 'TVA collectée', 0, 800.00, true),
   
-  ('VT-2025-003', '2025-12-14', 'VE', '411', 'Client - Prestation conseil', 4062.30, 0, true),
-  ('VT-2025-003', '2025-12-14', 'VE', '706', 'Prestations de services', 0, 3385.25, true),
-  ('VT-2025-003', '2025-12-14', 'VE', '4457', 'TVA collectée', 0, 677.05, true),
+  (1, 'VT-2025-003', '2025-12-14', 'VE', '411', 'Client - Prestation conseil', 4062.30, 0, true),
+  (1, 'VT-2025-003', '2025-12-14', 'VE', '706', 'Prestations de services', 0, 3385.25, true),
+  (1, 'VT-2025-003', '2025-12-14', 'VE', '4457', 'TVA collectée', 0, 677.05, true),
   
   -- Achats et charges
-  ('AC-2025-001', '2025-12-02', 'AC', '613', 'Locations', 1200.00, 0, true),
-  ('AC-2025-001', '2025-12-02', 'AC', '401', 'Fournisseurs', 0, 1200.00, true),
+  (1, 'AC-2025-001', '2025-12-02', 'AC', '613', 'Locations', 1200.00, 0, true),
+  (1, 'AC-2025-001', '2025-12-02', 'AC', '401', 'Fournisseurs', 0, 1200.00, true),
   
-  ('AC-2025-002', '2025-12-03', 'AC', '607', 'Achats de marchandises', 1250.00, 0, true),
-  ('AC-2025-002', '2025-12-03', 'AC', '4456', 'TVA déductible', 250.00, 0, true),
-  ('AC-2025-002', '2025-12-03', 'AC', '401', 'Fournisseurs', 0, 1500.00, true),
+  (1, 'AC-2025-002', '2025-12-03', 'AC', '607', 'Achats de marchandises', 1250.00, 0, true),
+  (1, 'AC-2025-002', '2025-12-03', 'AC', '4456', 'TVA déductible', 250.00, 0, true),
+  (1, 'AC-2025-002', '2025-12-03', 'AC', '401', 'Fournisseurs', 0, 1500.00, true),
   
-  ('AC-2025-003', '2025-12-05', 'AC', '615', 'Entretien et réparations', 150.00, 0, true),
-  ('AC-2025-003', '2025-12-05', 'AC', '512', 'Banque', 0, 150.00, true),
+  (1, 'AC-2025-003', '2025-12-05', 'AC', '615', 'Entretien et réparations', 150.00, 0, true),
+  (1, 'AC-2025-003', '2025-12-05', 'AC', '512', 'Banque', 0, 150.00, true),
   
-  ('AC-2025-004', '2025-12-07', 'AC', '616', 'Assurances', 850.00, 0, true),
-  ('AC-2025-004', '2025-12-07', 'AC', '512', 'Banque', 0, 850.00, true),
+  (1, 'AC-2025-004', '2025-12-07', 'AC', '616', 'Assurances', 850.00, 0, true),
+  (1, 'AC-2025-004', '2025-12-07', 'AC', '512', 'Banque', 0, 850.00, true),
   
-  ('AC-2025-005', '2025-12-10', 'AC', '607', 'Achats de marchandises', 71.25, 0, true),
-  ('AC-2025-005', '2025-12-10', 'AC', '4456', 'TVA déductible', 14.25, 0, true),
-  ('AC-2025-005', '2025-12-10', 'AC', '512', 'Banque', 0, 85.50, true),
+  (1, 'AC-2025-005', '2025-12-10', 'AC', '607', 'Achats de marchandises', 71.25, 0, true),
+  (1, 'AC-2025-005', '2025-12-10', 'AC', '4456', 'TVA déductible', 14.25, 0, true),
+  (1, 'AC-2025-005', '2025-12-10', 'AC', '512', 'Banque', 0, 85.50, true),
   
-  ('AC-2025-006', '2025-12-12', 'AC', '601', 'Achats de matières premières', 375.00, 0, true),
-  ('AC-2025-006', '2025-12-12', 'AC', '4456', 'TVA déductible', 75.00, 0, true),
-  ('AC-2025-006', '2025-12-12', 'AC', '401', 'Fournisseurs', 0, 450.00, true),
+  (1, 'AC-2025-006', '2025-12-12', 'AC', '601', 'Achats de matières premières', 375.00, 0, true),
+  (1, 'AC-2025-006', '2025-12-12', 'AC', '4456', 'TVA déductible', 75.00, 0, true),
+  (1, 'AC-2025-006', '2025-12-12', 'AC', '401', 'Fournisseurs', 0, 450.00, true),
   
-  ('AC-2025-007', '2025-12-13', 'AC', '627', 'Services bancaires', 25.00, 0, true),
-  ('AC-2025-007', '2025-12-13', 'AC', '512', 'Banque', 0, 25.00, true),
+  (1, 'AC-2025-007', '2025-12-13', 'AC', '627', 'Services bancaires', 25.00, 0, true),
+  (1, 'AC-2025-007', '2025-12-13', 'AC', '512', 'Banque', 0, 25.00, true),
   
   -- Salaires
-  ('SA-2025-001', '2025-12-01', 'OD', '621', 'Personnel', 3500.00, 0, true),
-  ('SA-2025-001', '2025-12-01', 'OD', '512', 'Banque', 0, 3500.00, true),
+  (1, 'SA-2025-001', '2025-12-01', 'OD', '621', 'Personnel', 3500.00, 0, true),
+  (1, 'SA-2025-001', '2025-12-01', 'OD', '512', 'Banque', 0, 3500.00, true),
   
   -- Ventes novembre 2025 (pour avoir plus de données)
-  ('VT-2025-N01', '2025-11-05', 'VE', '411', 'Client - Vente', 3600.00, 0, true),
-  ('VT-2025-N01', '2025-11-05', 'VE', '707', 'Ventes de marchandises', 0, 3000.00, true),
-  ('VT-2025-N01', '2025-11-05', 'VE', '4457', 'TVA collectée', 0, 600.00, true),
+  (1, 'VT-2025-N01', '2025-11-05', 'VE', '411', 'Client - Vente', 3600.00, 0, true),
+  (1, 'VT-2025-N01', '2025-11-05', 'VE', '707', 'Ventes de marchandises', 0, 3000.00, true),
+  (1, 'VT-2025-N01', '2025-11-05', 'VE', '4457', 'TVA collectée', 0, 600.00, true),
   
-  ('VT-2025-N02', '2025-11-15', 'VE', '411', 'Client - Prestation', 2400.00, 0, true),
-  ('VT-2025-N02', '2025-11-15', 'VE', '706', 'Prestations de services', 0, 2000.00, true),
-  ('VT-2025-N02', '2025-11-15', 'VE', '4457', 'TVA collectée', 0, 400.00, true),
+  (1, 'VT-2025-N02', '2025-11-15', 'VE', '411', 'Client - Prestation', 2400.00, 0, true),
+  (1, 'VT-2025-N02', '2025-11-15', 'VE', '706', 'Prestations de services', 0, 2000.00, true),
+  (1, 'VT-2025-N02', '2025-11-15', 'VE', '4457', 'TVA collectée', 0, 400.00, true),
   
   -- Charges novembre 2025
-  ('AC-2025-N01', '2025-11-02', 'AC', '613', 'Locations', 1200.00, 0, true),
-  ('AC-2025-N01', '2025-11-02', 'AC', '401', 'Fournisseurs', 0, 1200.00, true),
+  (1, 'AC-2025-N01', '2025-11-02', 'AC', '613', 'Locations', 1200.00, 0, true),
+  (1, 'AC-2025-N01', '2025-11-02', 'AC', '401', 'Fournisseurs', 0, 1200.00, true),
   
-  ('AC-2025-N02', '2025-11-10', 'AC', '607', 'Achats de marchandises', 800.00, 0, true),
-  ('AC-2025-N02', '2025-11-10', 'AC', '4456', 'TVA déductible', 160.00, 0, true),
-  ('AC-2025-N02', '2025-11-10', 'AC', '401', 'Fournisseurs', 0, 960.00, true),
+  (1, 'AC-2025-N02', '2025-11-10', 'AC', '607', 'Achats de marchandises', 800.00, 0, true),
+  (1, 'AC-2025-N02', '2025-11-10', 'AC', '4456', 'TVA déductible', 160.00, 0, true),
+  (1, 'AC-2025-N02', '2025-11-10', 'AC', '401', 'Fournisseurs', 0, 960.00, true),
   
-  ('SA-2025-N01', '2025-11-01', 'OD', '621', 'Personnel', 3500.00, 0, true),
-  ('SA-2025-N01', '2025-11-01', 'OD', '512', 'Banque', 0, 3500.00, true)
+  (1, 'SA-2025-N01', '2025-11-01', 'OD', '621', 'Personnel', 3500.00, 0, true),
+  (1, 'SA-2025-N01', '2025-11-01', 'OD', '512', 'Banque', 0, 3500.00, true)
 ON CONFLICT DO NOTHING;
 
 -- Trigger pour mettre à jour updated_at
@@ -388,39 +403,46 @@ BEGIN
 END $$;
 
 -- ============================================================================
--- SEED DATA - Sample Invoices
+-- SEED DATA - Sample Companies and Invoices
 -- ============================================================================
 
+-- Insert sample clients
+INSERT INTO clients (entreprise_id, nom, siret, adresse, code_postal, ville, email, telephone, contact_principal, actif, created_at, updated_at)
+VALUES 
+(1, 'ITERA', '12312312312312', '123 Rue du Commerce', '75015', 'Paris', 'contact@itera.fr', '0145678912', 'Jean Dupont', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 'ITERA', '12312312312313', '123 Rue du Commerce', '75015', 'Paris', 'contact@itera.fr', '0145678912', 'Jean Dupont', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ON CONFLICT DO NOTHING;
+
 -- Insert invoices from the CSV data
-INSERT INTO factures (numero, type, date_emission, date_echeance, client_fournisseur, montant_ht, montant_tva, montant_ttc, statut, categorie, notes, created_at, updated_at)
+INSERT INTO factures (entreprise_id, numero, type, date_emission, date_echeance, client_fournisseur, montant_ht, montant_tva, montant_ttc, statut, categorie, notes, created_at, updated_at)
 VALUES
-('FAC-2025-001', 'vente', '2025-11-29', '2025-12-29', 'ITERA', 8640.00, 1728.00, 10368.00, 'en_attente', NULL, 'Facture de Novembre 2025 - ITERA', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('FAC-2025-002', 'vente', '2025-10-02', '2025-11-02', 'ITERA', 10800.00, 2160.00, 12960.00, 'en_attente', NULL, 'Facture de Octobre 2025 - ITERA', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('FAC-2025-003', 'vente', '2025-09-30', '2025-10-30', 'ITERA', 11880.00, 2376.00, 14256.00, 'payee', NULL, 'Facture de Septembre 2025 - ITERA', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('FAC-2025-004', 'vente', '2025-08-13', '2025-09-13', 'ITERA', 10260.00, 2052.00, 12312.00, 'payee', NULL, 'Facture de Août 2025 - ITERA', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('FAC-2025-005', 'vente', '2025-07-31', '2025-08-31', 'ITERA', 11880.00, 2376.00, 14256.00, 'payee', NULL, 'Facture de Juillet 2025 - ITERA', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('FAC-2025-006', 'vente', '2025-06-30', '2025-07-30', 'ITERA', 10584.00, 2116.80, 12700.80, 'payee', NULL, 'Facture de Juin 2025 - ITERA', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('FAC-2025-007', 'vente', '2025-05-30', '2025-06-30', 'ITERA', 4030.00, 806.00, 4836.00, 'payee', NULL, 'Facture de Mai 2025 - ITERA', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('FAC-2025-008', 'vente', '2025-04-30', '2025-05-30', 'ITERA', 10080.00, 2016.00, 12096.00, 'payee', NULL, 'Facture de Avril 2025 - ITERA', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('FAC-2025-009', 'vente', '2025-03-31', '2025-04-30', 'ITERA', 10584.00, 2116.80, 12700.80, 'payee', NULL, 'Facture de Mars 2025 - ITERA', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('FAC-2025-010', 'vente', '2025-02-28', '2025-03-30', 'ITERA', 9576.00, 1915.20, 11491.20, 'en_attente', NULL, 'Facture de Février 2025 - ITERA', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('FAC-2025-011', 'vente', '2025-02-28', '2025-03-30', 'ITERA', 10584.00, 2116.80, 12700.80, 'payee', NULL, 'Facture de Février 2025 - ITERA', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('FAC-2025-012', 'vente', '2025-01-31', '2025-02-28', 'ITERA', 8048.00, 1609.60, 9657.60, 'payee', NULL, 'Facture de Janvier 2025 - ITERA', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('FAC-2025-013', 'vente', '2025-01-20', '2025-02-20', 'Weevi', 5076.00, 1015.20, 6091.20, 'payee', NULL, 'Facture de Janvier 2025 - WaVii', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('FAC-2024-014', 'vente', '2024-12-06', '2025-01-06', 'Weevi', 7611.00, 1522.20, 9133.20, 'payee', NULL, 'Facture de Décembre 2024 - WaVii', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('FAC-2024-015', 'vente', '2024-11-15', '2024-12-15', 'Weevi', 9156.80, 1831.36, 10988.16, 'payee', NULL, 'Facture de Novembre 2024 - WaVii', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('FAC-2024-016', 'vente', '2024-10-01', '2024-11-01', 'Weevi', 15675.80, 3135.16, 18810.96, 'payee', NULL, 'Facture de Octobre 2024 - WaVii', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('FAC-2024-017', 'vente', '2024-09-16', '2024-10-16', 'Weevi', 1522.50, 304.50, 1827.00, 'payee', NULL, 'Facture de Septembre 2024 - WaVii', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('FAC-2024-018', 'vente', '2024-08-01', '2024-09-01', 'Weevi', 8121.60, 1624.32, 9745.92, 'payee', NULL, 'Facture de Août 2024 - WaVii', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('FAC-2024-019', 'vente', '2024-07-02', '2024-08-02', 'Weevi', 10659.60, 2131.92, 12791.52, 'payee', NULL, 'Facture de Juillet 2024 - Weevii', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('FAC-2024-020', 'vente', '2024-06-05', '2024-07-05', 'Weevi', 7611.00, 1522.20, 9133.20, 'payee', NULL, 'Facture de Juin 2024 - Weevii', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('FAC-2024-021', 'vente', '2024-05-06', '2024-06-06', 'Weevi', 9360.60, 1872.12, 11232.72, 'payee', NULL, 'Facture de Mai 2024 - Weevii', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('FAC-2024-022', 'vente', '2024-04-05', '2024-05-05', 'Weevi', 8460.00, 1692.00, 10152.00, 'payee', NULL, 'Facture de Avril 2024 - Weevii', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('FAC-2024-023', 'vente', '2024-03-05', '2024-04-05', 'Weevi', 8160.00, 1632.00, 9792.00, 'payee', NULL, 'Facture de Mars 2024 - Weevi', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('FAC-2024-024', 'vente', '2024-02-05', '2024-03-05', 'Weevi', 8832.00, 1766.40, 10598.40, 'payee', NULL, 'Facture de Février 2024 - Waevii', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('FAC-2024-025', 'vente', '2024-01-05', '2024-02-05', 'Weevi', 9306.00, 1861.20, 11167.20, 'payee', NULL, 'Facture de Janvier 2024 - Waevii', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('FAC-2023-026', 'vente', '2023-12-05', '2024-01-05', 'Weevi', 8940.00, 1788.00, 10728.00, 'payee', NULL, 'Décembre 2023 - Waevi', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('FAC-2023-027', 'vente', '2023-11-05', '2023-12-05', 'Weevi', 3507.00, 701.40, 4208.40, 'payee', NULL, 'Novembre 2023 - Waovi', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+(1, 'FAC-2025-001', 'vente', '2025-11-29', '2025-12-29', 'ITERA', 8640.00, 1728.00, 10368.00, 'en_attente', NULL, 'Facture de Novembre 2025 - ITERA', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 'FAC-2025-002', 'vente', '2025-10-02', '2025-11-02', 'ITERA', 10800.00, 2160.00, 12960.00, 'en_attente', NULL, 'Facture de Octobre 2025 - ITERA', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 'FAC-2025-003', 'vente', '2025-09-30', '2025-10-30', 'ITERA', 11880.00, 2376.00, 14256.00, 'payee', NULL, 'Facture de Septembre 2025 - ITERA', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 'FAC-2025-004', 'vente', '2025-08-13', '2025-09-13', 'ITERA', 10260.00, 2052.00, 12312.00, 'payee', NULL, 'Facture de Août 2025 - ITERA', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 'FAC-2025-005', 'vente', '2025-07-31', '2025-08-31', 'ITERA', 11880.00, 2376.00, 14256.00, 'payee', NULL, 'Facture de Juillet 2025 - ITERA', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 'FAC-2025-006', 'vente', '2025-06-30', '2025-07-30', 'ITERA', 10584.00, 2116.80, 12700.80, 'payee', NULL, 'Facture de Juin 2025 - ITERA', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 'FAC-2025-007', 'vente', '2025-05-30', '2025-06-30', 'ITERA', 4030.00, 806.00, 4836.00, 'payee', NULL, 'Facture de Mai 2025 - ITERA', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 'FAC-2025-008', 'vente', '2025-04-30', '2025-05-30', 'ITERA', 10080.00, 2016.00, 12096.00, 'payee', NULL, 'Facture de Avril 2025 - ITERA', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 'FAC-2025-009', 'vente', '2025-03-31', '2025-04-30', 'ITERA', 10584.00, 2116.80, 12700.80, 'payee', NULL, 'Facture de Mars 2025 - ITERA', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 'FAC-2025-010', 'vente', '2025-02-28', '2025-03-30', 'ITERA', 9576.00, 1915.20, 11491.20, 'en_attente', NULL, 'Facture de Février 2025 - ITERA', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 'FAC-2025-011', 'vente', '2025-02-28', '2025-03-30', 'ITERA', 10584.00, 2116.80, 12700.80, 'payee', NULL, 'Facture de Février 2025 - ITERA', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 'FAC-2025-012', 'vente', '2025-01-31', '2025-02-28', 'ITERA', 8048.00, 1609.60, 9657.60, 'payee', NULL, 'Facture de Janvier 2025 - ITERA', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 'FAC-2025-013', 'vente', '2025-01-20', '2025-02-20', 'Weevi', 5076.00, 1015.20, 6091.20, 'payee', NULL, 'Facture de Janvier 2025 - WaVii', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 'FAC-2024-014', 'vente', '2024-12-06', '2025-01-06', 'Weevi', 7611.00, 1522.20, 9133.20, 'payee', NULL, 'Facture de Décembre 2024 - WaVii', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 'FAC-2024-015', 'vente', '2024-11-15', '2024-12-15', 'Weevi', 9156.80, 1831.36, 10988.16, 'payee', NULL, 'Facture de Novembre 2024 - WaVii', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 'FAC-2024-016', 'vente', '2024-10-01', '2024-11-01', 'Weevi', 15675.80, 3135.16, 18810.96, 'payee', NULL, 'Facture de Octobre 2024 - WaVii', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 'FAC-2024-017', 'vente', '2024-09-16', '2024-10-16', 'Weevi', 1522.50, 304.50, 1827.00, 'payee', NULL, 'Facture de Septembre 2024 - WaVii', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 'FAC-2024-018', 'vente', '2024-08-01', '2024-09-01', 'Weevi', 8121.60, 1624.32, 9745.92, 'payee', NULL, 'Facture de Août 2024 - WaVii', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 'FAC-2024-019', 'vente', '2024-07-02', '2024-08-02', 'Weevi', 10659.60, 2131.92, 12791.52, 'payee', NULL, 'Facture de Juillet 2024 - Weevii', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 'FAC-2024-020', 'vente', '2024-06-05', '2024-07-05', 'Weevi', 7611.00, 1522.20, 9133.20, 'payee', NULL, 'Facture de Juin 2024 - Weevii', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 'FAC-2024-021', 'vente', '2024-05-06', '2024-06-06', 'Weevi', 9360.60, 1872.12, 11232.72, 'payee', NULL, 'Facture de Mai 2024 - Weevii', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 'FAC-2024-022', 'vente', '2024-04-05', '2024-05-05', 'Weevi', 8460.00, 1692.00, 10152.00, 'payee', NULL, 'Facture de Avril 2024 - Weevii', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 'FAC-2024-023', 'vente', '2024-03-05', '2024-04-05', 'Weevi', 8160.00, 1632.00, 9792.00, 'payee', NULL, 'Facture de Mars 2024 - Weevi', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 'FAC-2024-024', 'vente', '2024-02-05', '2024-03-05', 'Weevi', 8832.00, 1766.40, 10598.40, 'payee', NULL, 'Facture de Février 2024 - Waevii', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 'FAC-2024-025', 'vente', '2024-01-05', '2024-02-05', 'Weevi', 9306.00, 1861.20, 11167.20, 'payee', NULL, 'Facture de Janvier 2024 - Waevii', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 'FAC-2023-026', 'vente', '2023-12-05', '2024-01-05', 'Weevi', 8940.00, 1788.00, 10728.00, 'payee', NULL, 'Décembre 2023 - Waevi', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 'FAC-2023-027', 'vente', '2023-11-05', '2023-12-05', 'Weevi', 3507.00, 701.40, 4208.40, 'payee', NULL, 'Novembre 2023 - Waovi', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 ON CONFLICT (numero) DO NOTHING;
 
 -- Set montant_paye for paid invoices

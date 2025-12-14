@@ -5,7 +5,16 @@ const pool = require('../config/database');
 // GET immobilisations
 router.get('/', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM immobilisations ORDER BY date_acquisition DESC');
+    const { entreprise_id } = req.query;
+    
+    if (!entreprise_id) {
+      return res.status(400).json({ error: 'entreprise_id est requis' });
+    }
+    
+    const result = await pool.query(
+      'SELECT * FROM immobilisations WHERE entreprise_id = $1 ORDER BY date_acquisition DESC',
+      [entreprise_id]
+    );
     res.json(result.rows);
   } catch (err) {
     console.error(err);
@@ -269,6 +278,12 @@ router.get('/:id/amortissement/:annee', async (req, res) => {
 // GET statistiques
 router.get('/statistiques', async (req, res) => {
   try {
+    const { entreprise_id } = req.query;
+    
+    if (!entreprise_id) {
+      return res.status(400).json({ error: 'entreprise_id est requis' });
+    }
+    
     const result = await pool.query(`
       SELECT 
         COALESCE(SUM(valeur_acquisition), 0) as total_acquisition,
@@ -277,7 +292,8 @@ router.get('/statistiques', async (req, res) => {
         COUNT(CASE WHEN en_service = true THEN 1 END) as actives,
         COUNT(CASE WHEN en_service = false OR date_cession IS NOT NULL THEN 1 END) as cedees
       FROM immobilisations
-    `);
+      WHERE entreprise_id = $1
+    `, [entreprise_id]);
     
     const stats = result.rows[0];
     res.json({

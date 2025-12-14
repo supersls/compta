@@ -3,14 +3,14 @@ import 'api_service.dart';
 
 class ClientService {
   // Récupérer tous les clients
-  Future<List<Client>> getAllClients() async {
-    final List<dynamic> data = await ApiService.get('clients');
+  Future<List<Client>> getAllClients(int entrepriseId) async {
+    final List<dynamic> data = await ApiService.get('clients', queryParams: {'entreprise_id': entrepriseId});
     return data.map((json) => Client.fromMap(json)).toList();
   }
 
   // Récupérer uniquement les clients actifs
-  Future<List<Client>> getClientsActifs() async {
-    final List<dynamic> data = await ApiService.get('clients/actifs');
+  Future<List<Client>> getClientsActifs(int entrepriseId) async {
+    final List<dynamic> data = await ApiService.get('clients/actifs', queryParams: {'entreprise_id': entrepriseId});
     return data.map((json) => Client.fromMap(json)).toList();
   }
 

@@ -3,8 +3,8 @@ import '../models/declaration_tva.dart';
 
 class TVAService {
   // Récupérer toutes les déclarations TVA
-  Future<List<DeclarationTVA>> getAllDeclarations() async {
-    final List<dynamic> data = await ApiService.get('tva/declarations');
+  Future<List<DeclarationTVA>> getAllDeclarations(int entrepriseId) async {
+    final List<dynamic> data = await ApiService.get('tva/declarations', queryParams: {'entreprise_id': entrepriseId});
     return data.map((json) => DeclarationTVA.fromMap(json)).toList();
   }
 
@@ -29,13 +29,13 @@ class TVAService {
   // These features are disabled until backend implementation is complete
   
   // Récupérer les statistiques TVA
-  Future<Map<String, dynamic>> getStatistiquesTVA() async {
-    return await ApiService.get('tva/statistiques');
+  Future<Map<String, dynamic>> getStatistiquesTVA(int entrepriseId) async {
+    return await ApiService.get('tva/statistiques', queryParams: {'entreprise_id': entrepriseId});
   }
 
   // Alias pour getTVAStats
-  Future<Map<String, dynamic>> getTVAStats() async {
-    return await getStatistiquesTVA();
+  Future<Map<String, dynamic>> getTVAStats(int entrepriseId) async {
+    return await getStatistiquesTVA(entrepriseId);
   }
 
   // Récupérer le détail de la TVA par taux

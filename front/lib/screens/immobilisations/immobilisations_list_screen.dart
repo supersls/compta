@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../models/immobilisation.dart';
 import '../../services/immobilisation_service.dart';
 import '../../utils/formatters.dart';
+import '../../providers/entreprise_provider.dart';
 import 'immobilisation_form_screen.dart';
 import 'immobilisation_detail_screen.dart';
 
@@ -29,8 +31,12 @@ class _ImmobilisationsListScreenState extends State<ImmobilisationsListScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final immobilisations = await _service.getAllImmobilisations();
-      final statistiques = await _service.getStatistiques();
+      final entrepriseId = Provider.of<EntrepriseProvider>(context, listen: false).selectedEntreprise?.id;
+      if (entrepriseId == null) {
+        throw Exception('Aucune entreprise sélectionnée');
+      }
+      final immobilisations = await _service.getAllImmobilisations(entrepriseId);
+      final statistiques = await _service.getStatistiques(entrepriseId);
 
       setState(() {
         _immobilisations = immobilisations;

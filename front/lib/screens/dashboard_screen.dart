@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:provider/provider.dart';
 import '../services/facture_service_http.dart';
 import '../services/banque_service.dart';
 import '../services/tva_service.dart';
 import '../services/immobilisation_service.dart';
+import '../providers/entreprise_provider.dart';
 import '../utils/formatters.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -41,17 +43,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> _loadDashboardData() async {
     setState(() => _isLoading = true);
     try {
+      // Get selected entreprise
+      final entrepriseProvider = Provider.of<EntrepriseProvider>(context, listen: false);
+      final entrepriseId = entrepriseProvider.selectedEntreprise?.id;
+      
+      if (entrepriseId == null) {
+        throw Exception('Aucune entreprise sélectionnée');
+      }
+      
       // Load factures stats
-      final factureStats = await _factureService.getFacturesStats();
+      final factureStats = await _factureService.getFacturesStats(entrepriseId);
       
       // Load banque stats
-      final banqueStats = await _banqueService.getStatistiques();
+      final banqueStats = await _banqueService.getStatistiques(entrepriseId);
       
       // Load TVA stats
-      final tvaStats = await _tvaService.getTVAStats();
+      final tvaStats = await _tvaService.getTVAStats(entrepriseId);
       
       // Load immobilisations
-      final immobilisations = await _immobilisationService.getAllImmobilisations();
+      final immobilisations = await _immobilisationService.getAllImmobilisations(entrepriseId);
 
       // Calculate KPIs
       _chiffreAffaires = (factureStats['totalVentes'] as num?)?.toDouble() ?? 0;

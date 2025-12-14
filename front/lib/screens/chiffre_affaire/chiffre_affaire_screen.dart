@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../services/chiffre_affaire_service.dart';
+import '../../providers/entreprise_provider.dart';
 import '../../utils/formatters.dart';
 
 class ChiffreAffaireScreen extends StatefulWidget {
@@ -29,6 +31,11 @@ class _ChiffreAffaireScreenState extends State<ChiffreAffaireScreen> {
 
   Future<void> _loadExercices() async {
     try {
+      final entrepriseId = Provider.of<EntrepriseProvider>(context, listen: false).selectedEntreprise?.id;
+      if (entrepriseId == null) {
+        throw Exception('Aucune entreprise sélectionnée');
+      }
+      
       // Générer les années de 2023 à l'année en cours
       final currentYear = DateTime.now().year;
       final generatedYears = List.generate(
@@ -37,7 +44,7 @@ class _ChiffreAffaireScreenState extends State<ChiffreAffaireScreen> {
       );
       
       // Fusionner avec les années du backend si disponibles
-      final exercices = await _service.getExercices();
+      final exercices = await _service.getExercices(entrepriseId);
       final allYears = {...generatedYears, ...exercices}.toList()..sort();
       
       setState(() {
@@ -64,12 +71,17 @@ class _ChiffreAffaireScreenState extends State<ChiffreAffaireScreen> {
     setState(() => _isLoading = true);
     
     try {
+      final entrepriseId = Provider.of<EntrepriseProvider>(context, listen: false).selectedEntreprise?.id;
+      if (entrepriseId == null) {
+        throw Exception('Aucune entreprise sélectionnée');
+      }
+      
       final exercice = _exerciceSelectionne == 'all' ? null : _exerciceSelectionne;
       
       final results = await Future.wait([
-        _service.getCaMensuel(exercice: exercice),
-        _service.getStatistiques(exercice: exercice),
-        _service.getCaParClient(exercice: exercice),
+        _service.getCaMensuel(entrepriseId: entrepriseId, exercice: exercice),
+        _service.getStatistiques(entrepriseId: entrepriseId, exercice: exercice),
+        _service.getCaParClient(entrepriseId: entrepriseId, exercice: exercice),
       ]);
 
       setState(() {

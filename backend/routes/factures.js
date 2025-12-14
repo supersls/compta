@@ -17,8 +17,15 @@ const validateFacture = [
 // GET toutes les factures
 router.get('/', async (req, res) => {
   try {
+    const { entreprise_id } = req.query;
+    
+    if (!entreprise_id) {
+      return res.status(400).json({ error: 'entreprise_id est requis' });
+    }
+    
     const result = await pool.query(
-      'SELECT * FROM factures ORDER BY date_emission DESC'
+      'SELECT * FROM factures WHERE entreprise_id = $1 ORDER BY date_emission DESC',
+      [entreprise_id]
     );
     res.json(result.rows);
   } catch (err) {
@@ -99,6 +106,12 @@ router.get('/filter/retard', async (req, res) => {
 // GET statistiques
 router.get('/stats/overview', async (req, res) => {
   try {
+    const { entreprise_id } = req.query;
+    
+    if (!entreprise_id) {
+      return res.status(400).json({ error: 'entreprise_id est requis' });
+    }
+    
     const result = await pool.query(`
       SELECT 
         SUM(CASE WHEN type = 'vente' THEN montant_ttc ELSE 0 END) as total_ventes,
@@ -108,7 +121,8 @@ router.get('/stats/overview', async (req, res) => {
         COUNT(CASE WHEN statut != 'payee' AND date_echeance < CURRENT_DATE THEN 1 END) as count_retard,
         COUNT(CASE WHEN type = 'vente' THEN 1 END) as countVentes
       FROM factures
-    `);
+      WHERE entreprise_id = $1
+    `, [entreprise_id]);
     
     const stats = result.rows[0];
     res.json({

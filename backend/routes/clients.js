@@ -13,9 +13,19 @@ const validateClient = [
 // GET tous les clients
 router.get('/', async (req, res) => {
   try {
-    const result = await pool.query(
-      'SELECT * FROM clients ORDER BY nom ASC'
-    );
+    const { entreprise_id } = req.query;
+    
+    let query = 'SELECT * FROM clients';
+    const params = [];
+    
+    if (entreprise_id) {
+      query += ' WHERE entreprise_id = $1';
+      params.push(entreprise_id);
+    }
+    
+    query += ' ORDER BY nom ASC';
+    
+    const result = await pool.query(query, params);
     res.json(result.rows);
   } catch (err) {
     console.error(err);
@@ -26,9 +36,19 @@ router.get('/', async (req, res) => {
 // GET clients actifs uniquement
 router.get('/actifs', async (req, res) => {
   try {
-    const result = await pool.query(
-      'SELECT * FROM clients WHERE actif = true ORDER BY nom ASC'
-    );
+    const { entreprise_id } = req.query;
+    
+    let query = 'SELECT * FROM clients WHERE actif = true';
+    const params = [];
+    
+    if (entreprise_id) {
+      query += ' AND entreprise_id = $1';
+      params.push(entreprise_id);
+    }
+    
+    query += ' ORDER BY nom ASC';
+    
+    const result = await pool.query(query, params);
     res.json(result.rows);
   } catch (err) {
     console.error(err);

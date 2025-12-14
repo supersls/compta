@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../services/documents_service.dart';
+import '../../providers/entreprise_provider.dart';
 import '../../utils/formatters.dart';
 
 class GrandLivreScreen extends StatefulWidget {
@@ -35,7 +37,13 @@ class _GrandLivreScreenState extends State<GrandLivreScreen> {
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     try {
+      final entrepriseId = Provider.of<EntrepriseProvider>(context, listen: false).selectedEntreprise?.id;
+      if (entrepriseId == null) {
+        throw Exception('Aucune entreprise sélectionnée');
+      }
+      
       final comptes = await _service.getGrandLivre(
+        entrepriseId: entrepriseId,
         debut: _dateDebut,
         fin: _dateFin,
         compte: _compteFilter,

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../models/facture.dart';
 import '../../services/facture_service_http.dart';
 import '../../utils/formatters.dart';
+import '../../providers/entreprise_provider.dart';
 import 'facture_form_screen.dart';
 import 'facture_detail_screen.dart';
 
@@ -32,7 +34,11 @@ class _FacturesListScreenState extends State<FacturesListScreen> {
   Future<void> _loadFactures() async {
     setState(() => _isLoading = true);
     try {
-      final factures = await _factureService.getAllFactures();
+      final entrepriseId = Provider.of<EntrepriseProvider>(context, listen: false).selectedEntreprise?.id;
+      if (entrepriseId == null) {
+        throw Exception('Aucune entreprise sélectionnée');
+      }
+      final factures = await _factureService.getAllFactures(entrepriseId);
       
       // Extract unique clients/fournisseurs
       final clientsSet = factures

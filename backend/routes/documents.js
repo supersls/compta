@@ -6,7 +6,7 @@ const pdfGenerator = require('../services/pdfGenerator');
 // Journal Comptable
 router.get('/journal', async (req, res) => {
   try {
-    const { debut, fin, journal } = req.query;
+    const { debut, fin, journal, entreprise_id } = req.query;
     
     let query = `
       SELECT * FROM ecritures_comptables 
@@ -14,8 +14,13 @@ router.get('/journal', async (req, res) => {
     `;
     const params = [debut, fin];
     
+    if (entreprise_id) {
+      query += ` AND entreprise_id = $${params.length + 1}`;
+      params.push(entreprise_id);
+    }
+    
     if (journal) {
-      query += ` AND journal = $3`;
+      query += ` AND journal = $${params.length + 1}`;
       params.push(journal);
     }
     
@@ -32,13 +37,18 @@ router.get('/journal', async (req, res) => {
 // Grand Livre
 router.get('/grand-livre', async (req, res) => {
   try {
-    const { debut, fin, compte } = req.query;
+    const { debut, fin, compte, entreprise_id } = req.query;
     
     let whereClause = 'WHERE date_ecriture BETWEEN $1 AND $2';
     const params = [debut, fin];
     
+    if (entreprise_id) {
+      whereClause += ` AND entreprise_id = $${params.length + 1}`;
+      params.push(entreprise_id);
+    }
+    
     if (compte) {
-      whereClause += ' AND compte = $3';
+      whereClause += ` AND compte = $${params.length + 1}`;
       params.push(compte);
     }
     
@@ -78,7 +88,15 @@ router.get('/grand-livre', async (req, res) => {
 // Bilan Comptable
 router.get('/bilan', async (req, res) => {
   try {
-    const { date } = req.query;
+    const { date, entreprise_id } = req.query;
+    
+    let whereClause = 'WHERE date_ecriture <= $1';
+    const params = [date];
+    
+    if (entreprise_id) {
+      whereClause += ` AND entreprise_id = $${params.length + 1}`;
+      params.push(entreprise_id);
+    }
     
     // Récupérer les soldes des comptes de bilan
     const query = `
@@ -98,6 +116,7 @@ router.get('/bilan', async (req, res) => {
         END as type,
         SUM(debit - credit) as solde
       FROM ecritures_comptables
+      ${whereClause}
       WHERE date_ecriture <= $1
       GROUP BY categorie, type
       HAVING SUM(debit - credit) != 0
@@ -141,9 +160,17 @@ router.get('/bilan', async (req, res) => {
 // Compte de Résultat
 router.get('/compte-resultat', async (req, res) => {
   try {
-    const { debut, fin, dateDebut, dateFin } = req.query;
+    const { debut, fin, dateDebut, dateFin, entreprise_id } = req.query;
     const periodeDebut = debut || dateDebut;
     const periodeFin = fin || dateFin;
+    
+    let whereClause = 'WHERE date_ecriture BETWEEN $1 AND $2';
+    const params = [periodeDebut, periodeFin];
+    
+    if (entreprise_id) {
+      whereClause += ` AND entreprise_id = $${params.length + 1}`;
+      params.push(entreprise_id);
+    }
     
     const query = `
       SELECT 
@@ -225,7 +252,15 @@ router.get('/compte-resultat', async (req, res) => {
 // Balance des comptes
 router.get('/balance', async (req, res) => {
   try {
-    const { debut, fin } = req.query;
+    const { debut, fin, entreprise_id } = req.query;
+    
+    let whereClause = 'WHERE date_ecriture BETWEEN $1 AND $2';
+    const params = [debut, fin];
+    
+    if (entreprise_id) {
+      whereClause += ` AND entreprise_id = $${params.length + 1}`;
+      params.push(entreprise_id);
+    }
     
     const query = `
       SELECT 
@@ -234,13 +269,13 @@ router.get('/balance', async (req, res) => {
         SUM(credit) as total_credit,
         SUM(debit - credit) as solde
       FROM ecritures_comptables
-      WHERE date_ecriture BETWEEN $1 AND $2
+      ${whereClause}
       GROUP BY compte
       HAVING SUM(debit) != 0 OR SUM(credit) != 0
       ORDER BY compte
     `;
     
-    const result = await pool.query(query, [debut, fin]);
+    const result = await pool.query(query, params);
     res.json(result.rows);
   } catch (err) {
     console.error(err);

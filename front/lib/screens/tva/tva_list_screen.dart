@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../models/declaration_tva.dart';
 import '../../services/tva_service.dart';
 import '../../utils/formatters.dart';
+import '../../providers/entreprise_provider.dart';
 import 'declaration_tva_form_screen.dart';
 import 'declaration_tva_detail_screen.dart';
 import 'calculateur_tva_screen.dart';
@@ -31,7 +33,11 @@ class _TVAListScreenState extends State<TVAListScreen> {
   Future<void> _loadDeclarations() async {
     setState(() => _isLoading = true);
     try {
-      final declarations = await _tvaService.getAllDeclarations();
+      final entrepriseId = Provider.of<EntrepriseProvider>(context, listen: false).selectedEntreprise?.id;
+      if (entrepriseId == null) {
+        throw Exception('Aucune entreprise sélectionnée');
+      }
+      final declarations = await _tvaService.getAllDeclarations(entrepriseId);
       setState(() {
         _declarations = declarations;
         _applyFilters();
@@ -49,7 +55,9 @@ class _TVAListScreenState extends State<TVAListScreen> {
 
   Future<void> _loadStatistiques() async {
     try {
-      final stats = await _tvaService.getStatistiquesTVA();
+      final entrepriseId = Provider.of<EntrepriseProvider>(context, listen: false).selectedEntreprise?.id;
+      if (entrepriseId == null) return;
+      final stats = await _tvaService.getStatistiquesTVA(entrepriseId);
       setState(() => _statistiques = stats);
     } catch (e) {
       // Ignorer les erreurs de stats

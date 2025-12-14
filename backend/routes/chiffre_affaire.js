@@ -5,15 +5,20 @@ const pool = require('../config/database');
 // Récupérer le chiffre d'affaires par mois
 router.get('/mensuel', async (req, res) => {
   try {
-    const { exercice } = req.query;
+    const { exercice, entreprise_id } = req.query;
     
-    let whereClause = '';
+    let whereClause = "WHERE f.type = 'vente'";
     let params = [];
+
+    if (entreprise_id) {
+      whereClause += ` AND f.entreprise_id = $${params.length + 1}`;
+      params.push(entreprise_id);
+    }
 
     if (exercice && exercice !== 'all') {
       // Filtrer par exercice (année)
       const annee = parseInt(exercice);
-      whereClause = `AND EXTRACT(YEAR FROM p.date_paiement) = $1`;
+      whereClause += ` AND EXTRACT(YEAR FROM p.date_paiement) = $${params.length + 1}`;
       params.push(annee);
     }
 
@@ -29,8 +34,7 @@ router.get('/mensuel', async (req, res) => {
         SUM(f.montant_tva * (p.montant / f.montant_ttc)) as total_tva
       FROM paiements p
       INNER JOIN factures f ON p.facture_id = f.id
-      WHERE f.type = 'vente'
-        ${whereClause}
+      ${whereClause}
       GROUP BY annee, mois, periode, periode_libelle
       ORDER BY annee, mois
     `;
@@ -46,14 +50,19 @@ router.get('/mensuel', async (req, res) => {
 // Récupérer les statistiques globales du CA
 router.get('/statistiques', async (req, res) => {
   try {
-    const { exercice } = req.query;
+    const { exercice, entreprise_id } = req.query;
     
-    let whereClause = '';
+    let whereClause = "WHERE f.type = 'vente'";
     let params = [];
+
+    if (entreprise_id) {
+      whereClause += ` AND f.entreprise_id = $${params.length + 1}`;
+      params.push(entreprise_id);
+    }
 
     if (exercice && exercice !== 'all') {
       const annee = parseInt(exercice);
-      whereClause = `AND EXTRACT(YEAR FROM p.date_paiement) = $1`;
+      whereClause += ` AND EXTRACT(YEAR FROM p.date_paiement) = $${params.length + 1}`;
       params.push(annee);
     }
 
@@ -68,8 +77,7 @@ router.get('/statistiques', async (req, res) => {
         MIN(p.montant) as montant_min
       FROM paiements p
       INNER JOIN factures f ON p.facture_id = f.id
-      WHERE f.type = 'vente'
-        ${whereClause}
+      ${whereClause}
     `;
 
     const result = await pool.query(query, params);
@@ -83,16 +91,26 @@ router.get('/statistiques', async (req, res) => {
 // Récupérer les exercices disponibles
 router.get('/exercices', async (req, res) => {
   try {
+    const { entreprise_id } = req.query;
+    
+    let whereClause = "WHERE f.type = 'vente'";
+    const params = [];
+    
+    if (entreprise_id) {
+      whereClause += ` AND f.entreprise_id = $${params.length + 1}`;
+      params.push(entreprise_id);
+    }
+    
     const query = `
       SELECT DISTINCT 
         EXTRACT(YEAR FROM p.date_paiement) as annee
       FROM paiements p
       INNER JOIN factures f ON p.facture_id = f.id
-      WHERE f.type = 'vente'
+      ${whereClause}
       ORDER BY annee DESC
     `;
 
-    const result = await pool.query(query);
+    const result = await pool.query(query, params);
     res.json(result.rows.map(row => row.annee));
   } catch (err) {
     console.error(err);
@@ -103,14 +121,19 @@ router.get('/exercices', async (req, res) => {
 // Récupérer le CA par client pour un exercice
 router.get('/par-client', async (req, res) => {
   try {
-    const { exercice } = req.query;
+    const { exercice, entreprise_id } = req.query;
     
-    let whereClause = '';
+    let whereClause = "WHERE f.type = 'vente'";
     let params = [];
+
+    if (entreprise_id) {
+      whereClause += ` AND f.entreprise_id = $${params.length + 1}`;
+      params.push(entreprise_id);
+    }
 
     if (exercice && exercice !== 'all') {
       const annee = parseInt(exercice);
-      whereClause = `AND EXTRACT(YEAR FROM p.date_paiement) = $1`;
+      whereClause += ` AND EXTRACT(YEAR FROM p.date_paiement) = $${params.length + 1}`;
       params.push(annee);
     }
 
@@ -122,8 +145,7 @@ router.get('/par-client', async (req, res) => {
         SUM(f.montant_ht * (p.montant / f.montant_ttc)) as chiffre_affaire_ht
       FROM paiements p
       INNER JOIN factures f ON p.facture_id = f.id
-      WHERE f.type = 'vente'
-        ${whereClause}
+      ${whereClause}
       GROUP BY f.client_fournisseur
       ORDER BY chiffre_affaire DESC
       LIMIT 10

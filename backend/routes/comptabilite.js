@@ -5,12 +5,23 @@ const pool = require('../config/database');
 // GET écritures comptables
 router.get('/ecritures', async (req, res) => {
   try {
-    const result = await pool.query(`
+    const { entreprise_id } = req.query;
+    
+    let query = `
       SELECT e.*, c.numero as compte_numero, c.libelle as compte_libelle
       FROM ecritures_comptables e
       LEFT JOIN plan_comptable c ON e.compte_id = c.id
-      ORDER BY e.date_ecriture DESC, e.numero_piece
-    `);
+    `;
+    const params = [];
+    
+    if (entreprise_id) {
+      query += ' WHERE e.entreprise_id = $1';
+      params.push(entreprise_id);
+    }
+    
+    query += ' ORDER BY e.date_ecriture DESC, e.numero_piece';
+    
+    const result = await pool.query(query, params);
     res.json(result.rows);
   } catch (err) {
     console.error(err);
@@ -37,6 +48,92 @@ router.get('/comptes', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Erreur lors de la récupération du plan comptable' });
+  }
+});
+
+// GET journaux
+router.get('/journaux', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM journaux WHERE actif = true ORDER BY code');
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur lors de la récupération des journaux' });
+  }
+});
+
+// POST créer un compte au plan comptable
+router.post('/plan-comptable', async (req, res) => {
+  try {
+    const { numero, libelle, classe, type } = req.body;
+    
+    if (!numero || !libelle || !classe || !type) {
+      return res.status(400).json({ 
+        error: 'Les champs numero, libelle, classe et type sont obligatoires' 
+      });
+    }
+    
+    const result = await pool.query(
+      `INSERT INTO comptes_pcg (numero, libelle, classe, type) 
+       VALUES ($1, $2, $3, $4) 
+       RETURNING *`,
+      [numero, libelle, classe, type]
+    );
+    
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    if (err.code === '23505') { // Duplicate key
+      res.status(409).json({ error: 'Ce numéro de compte existe déjà' });
+    } else {
+      res.status(500).json({ error: 'Erreur lors de la création du compte' });
+    }
+  }
+});
+
+// PUT mettre à jour un compte au plan comptable
+router.put('/plan-comptable/:numero', async (req, res) => {
+  try {
+    const { numero } = req.params;
+    const { libelle, classe, type } = req.body;
+    
+    const result = await pool.query(
+      `UPDATE comptes_pcg 
+       SET libelle = $1, classe = $2, type = $3
+       WHERE numero = $4
+       RETURNING *`,
+      [libelle, classe, type, numero]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Compte non trouvé' });
+    }
+    
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur lors de la mise à jour du compte' });
+  }
+});
+
+// DELETE supprimer un compte au plan comptable
+router.delete('/plan-comptable/:numero', async (req, res) => {
+  try {
+    const { numero } = req.params;
+    
+    const result = await pool.query(
+      'DELETE FROM comptes_pcg WHERE numero = $1 RETURNING *',
+      [numero]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Compte non trouvé' });
+    }
+    
+    res.json({ message: 'Compte supprimé avec succès' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur lors de la suppression du compte' });
   }
 });
 
@@ -98,25 +195,43 @@ router.get('/balance/:debut/:fin', async (req, res) => {
 router.post('/ecritures', async (req, res) => {
   try {
     const {
-      date_ecriture, numero_piece, journal, compte_id, libelle,
-      debit, credit, lettrage, facture_id
+      entreprise_id, date_ecriture, numero_piece, journal, compte, libelle,
+      debit, credit, lettrage, reference_externe, type_reference, validee
     } = req.body;
+    
+    // Validation des champs obligatoires
+    if (!entreprise_id || !numero_piece || !date_ecriture || !journal || !compte || !libelle) {
+      return res.status(400).json({ 
+        error: 'Les champs entreprise_id, numero_piece, date_ecriture, journal, compte et libelle sont obligatoires' 
+      });
+    }
+
+    // Vérifier que débit OU crédit est rempli (pas les deux)
+    const debitValue = parseFloat(debit) || 0;
+    const creditValue = parseFloat(credit) || 0;
+
+    if ((debitValue === 0 && creditValue === 0) || (debitValue > 0 && creditValue > 0)) {
+      return res.status(400).json({ 
+        error: 'Vous devez remplir soit le débit, soit le crédit (mais pas les deux)' 
+      });
+    }
     
     const result = await pool.query(`
       INSERT INTO ecritures_comptables (
-        date_ecriture, numero_piece, journal, compte_id, libelle,
-        debit, credit, lettrage, facture_id
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        entreprise_id, date_ecriture, numero_piece, journal, compte, libelle,
+        debit, credit, lettrage, reference_externe, type_reference, validee
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING *
     `, [
-      date_ecriture, numero_piece, journal, compte_id, libelle,
-      debit || 0, credit || 0, lettrage, facture_id
+      entreprise_id, date_ecriture, numero_piece, journal, compte, libelle,
+      debitValue, creditValue, lettrage || null, reference_externe || null, 
+      type_reference || null, validee !== undefined ? validee : true
     ]);
     
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Erreur lors de la création de l\'écriture' });
+    res.status(500).json({ error: 'Erreur lors de la création de l\'écriture', details: err.message });
   }
 });
 

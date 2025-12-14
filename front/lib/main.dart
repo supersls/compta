@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:provider/provider.dart';
+import 'providers/entreprise_provider.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/clients/clients_list_screen.dart';
 import 'screens/chiffre_affaire/chiffre_affaire_screen.dart';
@@ -8,11 +10,17 @@ import 'screens/tva/tva_list_screen.dart';
 import 'screens/immobilisations/immobilisations_list_screen.dart';
 import 'screens/banque/banque_list_screen.dart';
 import 'screens/documents/documents_list_screen.dart';
+import 'screens/administration/administration_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('fr_FR', null);
-  runApp(const ComptaApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => EntrepriseProvider()..loadEntreprises(),
+      child: const ComptaApp(),
+    ),
+  );
 }
 
 class ComptaApp extends StatelessWidget {
@@ -57,7 +65,14 @@ class ComptaApp extends StatelessWidget {
         useMaterial3: true,
       ),
       themeMode: ThemeMode.system,
-      home: const AdminDashboard(),
+      home: Consumer<EntrepriseProvider>(
+        builder: (context, provider, child) {
+          // Utiliser l'ID de l'entreprise comme clé pour forcer le rebuild complet
+          return AdminDashboard(
+            key: ValueKey(provider.selectedEntreprise?.id ?? 0),
+          );
+        },
+      ),
     );
   }
 }
@@ -187,6 +202,58 @@ class _AdminDashboardState extends State<AdminDashboard> {
             ),
           ),
           const Spacer(),
+          // Dropdown pour sélectionner l'entreprise
+          Consumer<EntrepriseProvider>(
+            builder: (context, provider, child) {
+              if (provider.entreprises.isEmpty) {
+                return const SizedBox.shrink();
+              }
+              
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: Theme.of(context).dividerColor,
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.business,
+                      size: 20,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    DropdownButton<int>(
+                      value: provider.selectedEntreprise?.id,
+                      underline: const SizedBox(),
+                      isDense: true,
+                      items: provider.entreprises.map((entreprise) {
+                        return DropdownMenuItem<int>(
+                          value: entreprise.id,
+                          child: Text(
+                            entreprise.nom,
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (int? newId) {
+                        if (newId != null) {
+                          final entreprise = provider.entreprises
+                              .firstWhere((e) => e.id == newId);
+                          provider.selectEntreprise(entreprise);
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+          const Spacer(),
           // Search bar (desktop only)
           if (MediaQuery.of(context).size.width >= 1200)
             Container(
@@ -256,10 +323,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 ),
               ),
               const PopupMenuItem<String>(
-                value: 'settings',
+                value: 'administration',
                 child: ListTile(
-                  leading: Icon(Icons.settings_outlined),
-                  title: Text('Paramètres'),
+                  leading: Icon(Icons.admin_panel_settings_outlined),
+                  title: Text('Administration'),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
@@ -274,7 +341,15 @@ class _AdminDashboardState extends State<AdminDashboard> {
               ),
             ],
             onSelected: (value) {
-              // Handle menu selection
+              if (value == 'administration') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AdministrationScreen(),
+                  ),
+                );
+              }
+              // Handle other menu selections
             },
           ),
         ],

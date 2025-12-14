@@ -9,8 +9,8 @@ class FactureService {
   }
 
   // Récupérer toutes les factures
-  Future<List<Facture>> getAllFactures() async {
-    final List<dynamic> data = await ApiService.get('factures');
+  Future<List<Facture>> getAllFactures(int entrepriseId) async {
+    final List<dynamic> data = await ApiService.get('factures', queryParams: {'entreprise_id': entrepriseId});
     return data.map((json) => Facture.fromMap(json)).toList();
   }
 
@@ -66,8 +66,8 @@ class FactureService {
   }
 
   // Récupérer les statistiques
-  Future<Map<String, dynamic>> getFacturesStats() async {
-    return await ApiService.get('factures/stats/overview');
+  Future<Map<String, dynamic>> getFacturesStats(int entrepriseId) async {
+    return await ApiService.get('factures/stats/overview', queryParams: {'entreprise_id': entrepriseId});
   }
 
   // Générer un numéro de facture

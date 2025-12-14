@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../services/documents_service.dart';
+import '../../providers/entreprise_provider.dart';
 import '../../utils/formatters.dart';
 
 class BilanComptableScreen extends StatefulWidget {
@@ -33,7 +35,12 @@ class _BilanComptableScreenState extends State<BilanComptableScreen> {
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     try {
-      final bilan = await _service.getBilan(dateArrete: _dateArrete);
+      final entrepriseId = Provider.of<EntrepriseProvider>(context, listen: false).selectedEntreprise?.id;
+      if (entrepriseId == null) {
+        throw Exception('Aucune entreprise sélectionnée');
+      }
+      
+      final bilan = await _service.getBilan(entrepriseId: entrepriseId, dateArrete: _dateArrete);
       setState(() {
         _bilan = bilan;
         _isLoading = false;

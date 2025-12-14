@@ -5,8 +5,8 @@ class BanqueService {
   // ============ COMPTES BANCAIRES ============
 
   // GET tous les comptes
-  Future<List<CompteBancaire>> getAllComptes() async {
-    final data = await ApiService.get('banque/comptes');
+  Future<List<CompteBancaire>> getAllComptes(int entrepriseId) async {
+    final data = await ApiService.get('banque/comptes', queryParams: {'entreprise_id': entrepriseId});
     return (data as List).map((item) => CompteBancaire.fromMap(item)).toList();
   }
 
@@ -30,8 +30,8 @@ class BanqueService {
   // ============ TRANSACTIONS ============
 
   // GET toutes les transactions
-  Future<List<TransactionBancaire>> getAllTransactions() async {
-    final data = await ApiService.get('banque/transactions');
+  Future<List<TransactionBancaire>> getAllTransactions(int entrepriseId) async {
+    final data = await ApiService.get('banque/transactions', queryParams: {'entreprise_id': entrepriseId});
     return (data as List).map((item) => TransactionBancaire.fromMap(item)).toList();
   }
 
@@ -85,8 +85,8 @@ class BanqueService {
   // ============ STATISTIQUES ============
 
   // GET statistiques globales
-  Future<Map<String, dynamic>> getStatistiques() async {
-    return await ApiService.get('banque/statistiques');
+  Future<Map<String, dynamic>> getStatistiques(int entrepriseId) async {
+    return await ApiService.get('banque/statistiques', queryParams: {'entreprise_id': entrepriseId});
   }
 
   // GET statistiques par compte

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../models/banque.dart';
 import '../../services/banque_service.dart';
 import '../../utils/formatters.dart';
+import '../../providers/entreprise_provider.dart';
 import 'compte_bancaire_form_screen.dart';
 import 'transaction_form_screen.dart';
 
@@ -41,11 +43,16 @@ class _CompteBancaireDetailScreenState extends State<CompteBancaireDetailScreen>
     setState(() => _isLoading = true);
 
     try {
+      final entrepriseId = Provider.of<EntrepriseProvider>(context, listen: false).selectedEntreprise?.id;
+      if (entrepriseId == null) {
+        throw Exception('Aucune entreprise sélectionnée');
+      }
+      
       final transactions = await _service.getTransactionsByCompte(_compte.id!);
       final statistiques = await _service.getStatistiquesCompte(_compte.id!);
       
       // Recharger le compte pour avoir le solde à jour
-      final comptes = await _service.getAllComptes();
+      final comptes = await _service.getAllComptes(entrepriseId);
       final compteUpdated = comptes.firstWhere((c) => c.id == _compte.id);
 
       setState(() {
