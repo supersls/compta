@@ -5,6 +5,7 @@ import '../../services/documents_service.dart';
 import '../../services/api_service.dart';
 import '../../providers/entreprise_provider.dart';
 import '../../utils/formatters.dart';
+import '../../widgets/justificatifs_widget.dart';
 
 class EcritureFormScreen extends StatefulWidget {
   const EcritureFormScreen({super.key});
@@ -16,6 +17,7 @@ class EcritureFormScreen extends StatefulWidget {
 class _EcritureFormScreenState extends State<EcritureFormScreen> {
   final DocumentsService _service = DocumentsService();
   final _formKey = GlobalKey<FormState>();
+  final _justificatifsKey = GlobalKey<JustificatifsWidgetState>();
   bool _isLoading = false;
   bool _isLoadingData = true;
 
@@ -336,6 +338,14 @@ class _EcritureFormScreenState extends State<EcritureFormScreen> {
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 24),
+
+                // Widget de gestion des justificatifs
+                JustificatifsWidget(
+                  key: _justificatifsKey,
+                  typeDocument: 'ecriture',
+                  dateDocument: _dateEcriture,
                 ),
                 const SizedBox(height: 24),
 

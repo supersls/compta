@@ -3,6 +3,7 @@ import '../../models/banque.dart';
 import '../../services/banque_service.dart';
 import '../../utils/formatters.dart';
 import '../../utils/validators.dart';
+import '../../widgets/justificatifs_widget.dart';
 
 class TransactionFormScreen extends StatefulWidget {
   final int compteId;
@@ -20,6 +21,7 @@ class TransactionFormScreen extends StatefulWidget {
 
 class _TransactionFormScreenState extends State<TransactionFormScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _justificatifsKey = GlobalKey<JustificatifsWidgetState>();
   final BanqueService _service = BanqueService();
 
   late TextEditingController _montantController;
@@ -224,6 +226,13 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                   ],
                 ),
               ),
+            ),
+            const SizedBox(height: 16),
+            // Widget de gestion des justificatifs
+            JustificatifsWidget(
+              key: _justificatifsKey,
+              typeDocument: 'releve',
+              dateDocument: _dateTransaction,
             ),
             const SizedBox(height: 16),
             Card(

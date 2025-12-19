@@ -26,6 +26,8 @@ app.use('/api/immobilisations', require('./routes/immobilisations'));
 app.use('/api/comptabilite', require('./routes/comptabilite'));
 app.use('/api/entreprise', require('./routes/entreprise'));
 app.use('/api/documents', require('./routes/documents'));
+app.use('/api/templates', require('./routes/templates'));
+app.use('/api/justificatifs', require('./routes/justificatifs'));
 
 // Error handling
 app.use((err, req, res, next) => {

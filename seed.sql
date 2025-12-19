@@ -43,7 +43,7 @@ INSERT INTO comptes_pcg (numero, libelle, classe, type) VALUES
 ('681', 'Dotations aux amortissements', 6, 'charge'),
 
 -- Classe 7 - Produits
-('706', 'Prestations de services', 7, 'produit'),
+('706', 'Prestations de services', 7, 'produit')
 ON CONFLICT (numero) DO NOTHING;
 
 -- ============================================================================

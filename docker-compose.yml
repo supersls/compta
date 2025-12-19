@@ -45,8 +45,12 @@ services:
       DB_NAME: compta_ei
       DB_USER: postgres
       DB_PASSWORD: postgres
+      STORAGE_MODE: local
+      LOCAL_STORAGE_PATH: /app/storage/justificatifs
     ports:
       - "3000:3000"
+    volumes:
+      - justificatifs_storage:/app/storage/justificatifs
     networks:
       - compta_network
     depends_on:
@@ -56,6 +60,8 @@ volumes:
   postgres_data:
     driver: local
   pgadmin_data:
+    driver: local
+  justificatifs_storage:
     driver: local
 
 networks:

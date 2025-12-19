@@ -94,6 +94,32 @@ Le serveur démarre sur `http://localhost:3000`
 - `GET /` - Informations entreprise
 - `POST /` - Créer/Mettre à jour entreprise
 
+### Justificatifs (`/api/justificatifs`)
+
+- `GET /` - Liste des justificatifs (filtrable)
+- `GET /:id` - Récupérer un justificatif
+- `GET /:id/download` - Télécharger le fichier
+- `GET /:id/view` - Visualiser le fichier inline
+- `GET /:id/history` - Historique des actions
+- `GET /stats/summary` - Statistiques de stockage
+- `POST /upload` - Upload un justificatif (multipart/form-data)
+- `POST /:id/archive` - Archiver un justificatif
+- `PUT /:id` - Mettre à jour les métadonnées
+- `DELETE /:id` - Supprimer un justificatif
+
+📖 **Documentation complète** : [JUSTIFICATIFS.md](./JUSTIFICATIFS.md)
+
+### Templates (`/api/templates`)
+
+- `GET /` - Liste des templates disponibles
+- `GET /:name` - Récupérer un template
+- `POST /` - Créer un nouveau template
+- `PUT /:name` - Mettre à jour un template
+- `DELETE /:name` - Supprimer un template
+- `POST /:name/reload` - Recharger un template
+
+📖 **Documentation complète** : [templates/README.md](./templates/README.md)
+
 ## 🧪 Tests
 
 ```bash
@@ -129,10 +155,31 @@ backend/
 │   ├── banque.js           # Routes bancaires
 │   ├── immobilisations.js  # Routes immobilisations
 │   ├── comptabilite.js     # Routes comptables
-│   └── entreprise.js       # Routes entreprise
+│   ├── entreprise.js       # Routes entreprise
+│   ├── justificatifs.js    # Routes justificatifs (NEW)
+│   ├── templates.js        # Routes templates (NEW)
+│   └── documents.js        # Routes documents PDF
+├── services/
+│   ├── pdfGenerator.js     # Génération de PDF
+│   ├── storageService.js   # Stockage abstrait (NEW)
+│   ├── localStorageProvider.js   # Stockage local (NEW)
+│   ├── cloudStorageProvider.js   # Stockage S3 (NEW)
+│   └── templateService.js  # Gestion templates (NEW)
+├── templates/              # Templates JSON pour PDF (NEW)
+│   ├── compte_resultat.json
+│   ├── bilan.json
+│   └── facture.json
+├── storage/                # Stockage local des fichiers (NEW)
+│   └── justificatifs/
+│       └── archives/
+├── migrations/             # Migrations SQL
+│   ├── 001_create_tables.sql
+│   ├── 002_seed_data.sql
+│   └── 003_create_justificatifs.sql (NEW)
 ├── scripts/
 │   └── initDB.js           # Script init DB
 ├── .env                    # Variables d'environnement
+├── .env.storage.example    # Config stockage (NEW)
 ├── server.js               # Point d'entrée
 └── package.json
 ```

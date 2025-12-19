@@ -4,6 +4,7 @@ import '../../services/facture_service_http.dart';
 import '../../utils/formatters.dart';
 import '../../utils/validators.dart';
 import '../../utils/constants.dart';
+import '../../widgets/justificatifs_widget.dart';
 
 class FactureFormScreen extends StatefulWidget {
   final Facture? facture;
@@ -16,6 +17,7 @@ class FactureFormScreen extends StatefulWidget {
 
 class _FactureFormScreenState extends State<FactureFormScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _justificatifsKey = GlobalKey<JustificatifsWidgetState>();
   final FactureService _factureService = FactureService();
   
   late TextEditingController _numeroController;
@@ -115,6 +117,15 @@ class _FactureFormScreenState extends State<FactureFormScreen> {
             _buildDatesSection(),
             const SizedBox(height: 24),
             _buildNotesSection(),
+            const SizedBox(height: 24),
+            // Widget de gestion des justificatifs
+            JustificatifsWidget(
+              key: _justificatifsKey,
+              typeDocument: 'facture',
+              factureId: widget.facture?.id,
+              readOnly: _isEditMode,
+              dateDocument: _dateEmission,
+            ),
             const SizedBox(height: 32),
             _buildRecapSection(),
             const SizedBox(height: 100),
@@ -465,7 +476,14 @@ class _FactureFormScreenState extends State<FactureFormScreen> {
       if (_isEditMode) {
         await _factureService.updateFacture(facture);
       } else {
-        await _factureService.createFacture(facture);
+        final createdFacture = await _factureService.createFacture(facture);
+        
+        // Upload des justificatifs en attente après la création de la facture
+        if (_justificatifsKey.currentState != null && createdFacture.id != null) {
+          await _justificatifsKey.currentState!.uploadPendingFiles(
+            factureId: createdFacture.id!,
+          );
+        }
       }
 
       if (mounted) {
