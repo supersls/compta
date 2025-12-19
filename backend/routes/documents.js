@@ -90,6 +90,10 @@ router.get('/bilan', async (req, res) => {
   try {
     const { date, entreprise_id } = req.query;
     
+    if (!date) {
+      return res.status(400).json({ error: 'La date est requise' });
+    }
+    
     let whereClause = 'WHERE date_ecriture <= $1';
     const params = [date];
     
@@ -98,7 +102,7 @@ router.get('/bilan', async (req, res) => {
       params.push(entreprise_id);
     }
     
-    // Récupérer les soldes des comptes de bilan
+    // Récupérer les soldes des comptes de bilan (comptes 1-5)
     const query = `
       SELECT 
         CASE 
@@ -117,12 +121,13 @@ router.get('/bilan', async (req, res) => {
         SUM(debit - credit) as solde
       FROM ecritures_comptables
       ${whereClause}
-      WHERE date_ecriture <= $1
+      AND compte NOT LIKE '6%' 
+      AND compte NOT LIKE '7%'
       GROUP BY categorie, type
       HAVING SUM(debit - credit) != 0
     `;
     
-    const result = await pool.query(query, [date]);
+    const result = await pool.query(query, params);
     
     const actif = {};
     const passif = {};
@@ -130,18 +135,40 @@ router.get('/bilan', async (req, res) => {
     let totalPassif = 0;
     
     result.rows.forEach(row => {
-      const montant = Math.abs(row.solde);
+      const solde = parseFloat(row.solde);
+      const montant = Math.abs(solde);
+      
       if (row.type === 'actif') {
-        actif[row.categorie] = montant;
-        totalActif += montant;
+        actif[row.categorie] = solde > 0 ? montant : -montant;
+        totalActif += solde > 0 ? montant : 0;
       } else {
-        passif[row.categorie] = montant;
-        totalPassif += montant;
+        passif[row.categorie] = solde < 0 ? montant : -montant;
+        totalPassif += solde < 0 ? montant : 0;
       }
     });
     
-    // Calculer le résultat
-    const resultat = totalActif - totalPassif;
+    // Calculer le résultat de l'exercice (produits - charges)
+    const resultatQuery = `
+      SELECT 
+        COALESCE(SUM(CASE WHEN compte LIKE '7%' THEN credit - debit ELSE 0 END), 0) as produits,
+        COALESCE(SUM(CASE WHEN compte LIKE '6%' THEN debit - credit ELSE 0 END), 0) as charges
+      FROM ecritures_comptables
+      ${whereClause}
+    `;
+    
+    const resultatResult = await pool.query(resultatQuery, params);
+    const produits = parseFloat(resultatResult.rows[0].produits) || 0;
+    const charges = parseFloat(resultatResult.rows[0].charges) || 0;
+    const resultat = produits - charges;
+    
+    // Ajouter le résultat au passif si bénéfice, à l'actif si perte
+    if (resultat > 0) {
+      passif['Résultat de l\'exercice'] = resultat;
+      totalPassif += resultat;
+    } else if (resultat < 0) {
+      actif['Perte de l\'exercice'] = Math.abs(resultat);
+      totalActif += Math.abs(resultat);
+    }
     
     res.json({
       date_arrete: date,
@@ -152,8 +179,8 @@ router.get('/bilan', async (req, res) => {
       resultat,
     });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Erreur lors de la génération du bilan' });
+    console.error('Erreur bilan:', err);
+    res.status(500).json({ error: 'Erreur lors de la génération du bilan', details: err.message });
   }
 });
 

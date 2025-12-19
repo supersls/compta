@@ -7,6 +7,7 @@ import 'screens/clients/clients_list_screen.dart';
 import 'screens/chiffre_affaire/chiffre_affaire_screen.dart';
 import 'screens/factures/factures_list_screen.dart';
 import 'screens/tva/tva_list_screen.dart';
+import 'screens/tva/calculateur_tva_screen.dart';
 import 'screens/immobilisations/immobilisations_list_screen.dart';
 import 'screens/banque/banque_list_screen.dart';
 import 'screens/documents/documents_list_screen.dart';
@@ -87,6 +88,7 @@ class AdminDashboard extends StatefulWidget {
 class _AdminDashboardState extends State<AdminDashboard> {
   int _selectedIndex = 0;
   bool _isDrawerExpanded = true;
+  final Set<int> _expandedMenuItems = {};
 
   final List<Map<String, dynamic>> _menuItems = [
     {
@@ -118,6 +120,20 @@ class _AdminDashboardState extends State<AdminDashboard> {
       'selectedIcon': Icons.money,
       'label': 'TVA',
       'screen': const TVAListScreen(),
+      'children': [
+        {
+          'icon': Icons.list_alt_outlined,
+          'selectedIcon': Icons.list_alt,
+          'label': 'Déclarations',
+          'screen': const TVAListScreen(),
+        },
+        {
+          'icon': Icons.calculate_outlined,
+          'selectedIcon': Icons.calculate,
+          'label': 'Calculateur',
+          'screen': const CalculateurTVAScreen(),
+        },
+      ],
     },
     {
       'icon': Icons.account_balance_wallet_outlined,
@@ -160,7 +176,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               children: [
                 _buildTopBar(context, isTablet),
                 Expanded(
-                  child: _menuItems[_selectedIndex]['screen'] as Widget,
+                  child: _getScreenForIndex(_selectedIndex),
                 ),
               ],
             ),
@@ -196,7 +212,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
             ),
           const SizedBox(width: 8),
           Text(
-            _menuItems[_selectedIndex]['label'],
+            _getScreenTitle(),
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.w600,
             ),
@@ -411,56 +427,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(vertical: 8),
               itemCount: _menuItems.length,
-              itemBuilder: (context, index) {
-                final item = _menuItems[index];
-                final isSelected = _selectedIndex == index;
-                
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  child: Material(
-                    color: isSelected
-                        ? Theme.of(context).colorScheme.primaryContainer
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(8),
-                    child: InkWell(
-                      onTap: () => setState(() => _selectedIndex = index),
-                      borderRadius: BorderRadius.circular(8),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              isSelected ? item['selectedIcon'] : item['icon'],
-                              color: isSelected
-                                  ? Theme.of(context).colorScheme.primary
-                                  : Theme.of(context).colorScheme.onSurface,
-                            ),
-                            if (_isDrawerExpanded) ...[
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Text(
-                                  item['label'],
-                                  style: TextStyle(
-                                    color: isSelected
-                                        ? Theme.of(context).colorScheme.primary
-                                        : Theme.of(context).colorScheme.onSurface,
-                                    fontWeight: isSelected
-                                        ? FontWeight.w600
-                                        : FontWeight.normal,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
+              itemBuilder: (context, index) => _buildMenuItem(index),
             ),
           ),
           
@@ -496,6 +463,174 @@ class _AdminDashboardState extends State<AdminDashboard> {
         ],
       ),
     );
+  }
+
+  Widget _buildMenuItem(int index) {
+    final item = _menuItems[index];
+    final hasChildren = item['children'] != null && (item['children'] as List).isNotEmpty;
+    final isExpanded = _expandedMenuItems.contains(index);
+    final isSelected = _selectedIndex == index;
+    
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          child: Material(
+            color: isSelected
+                ? Theme.of(context).colorScheme.primaryContainer
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+            child: InkWell(
+              onTap: () {
+                if (hasChildren && _isDrawerExpanded) {
+                  setState(() {
+                    if (isExpanded) {
+                      _expandedMenuItems.remove(index);
+                    } else {
+                      _expandedMenuItems.add(index);
+                    }
+                  });
+                } else {
+                  setState(() => _selectedIndex = index);
+                }
+              },
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      isSelected ? item['selectedIcon'] : item['icon'],
+                      color: isSelected
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.onSurface,
+                    ),
+                    if (_isDrawerExpanded) ...[
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Text(
+                          item['label'],
+                          style: TextStyle(
+                            color: isSelected
+                                ? Theme.of(context).colorScheme.primary
+                                : Theme.of(context).colorScheme.onSurface,
+                            fontWeight: isSelected
+                                ? FontWeight.w600
+                                : FontWeight.normal,
+                          ),
+                        ),
+                      ),
+                      if (hasChildren)
+                        Icon(
+                          isExpanded ? Icons.expand_less : Icons.expand_more,
+                          size: 20,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        if (hasChildren && isExpanded && _isDrawerExpanded)
+          ...((item['children'] as List).asMap().entries.map((entry) {
+            final childIndex = entry.key;
+            final child = entry.value as Map<String, dynamic>;
+            final childGlobalIndex = index * 100 + childIndex + 1;
+            final isChildSelected = _selectedIndex == childGlobalIndex;
+            
+            return Padding(
+              padding: const EdgeInsets.only(left: 24, right: 8, top: 2, bottom: 2),
+              child: Material(
+                color: isChildSelected
+                    ? Theme.of(context).colorScheme.primaryContainer
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(8),
+                child: InkWell(
+                  onTap: () => setState(() => _selectedIndex = childGlobalIndex),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          isChildSelected ? child['selectedIcon'] : child['icon'],
+                          size: 20,
+                          color: isChildSelected
+                              ? Theme.of(context).colorScheme.primary
+                              : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Text(
+                            child['label'],
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: isChildSelected
+                                  ? Theme.of(context).colorScheme.primary
+                                  : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                              fontWeight: isChildSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          })),
+      ],
+    );
+  }
+
+  Widget _getScreenForIndex(int index) {
+    if (index > 100) {
+      final parentIndex = index ~/ 100;
+      final childIndex = (index % 100) - 1;
+      final parent = _menuItems[parentIndex];
+      if (parent['children'] != null) {
+        final children = parent['children'] as List;
+        if (childIndex < children.length) {
+          return children[childIndex]['screen'] as Widget;
+        }
+      }
+    }
+    
+    if (index < _menuItems.length) {
+      return _menuItems[index]['screen'] as Widget;
+    }
+    
+    return _menuItems[0]['screen'] as Widget;
+  }
+
+  String _getScreenTitle() {
+    if (_selectedIndex > 100) {
+      final parentIndex = _selectedIndex ~/ 100;
+      final childIndex = (_selectedIndex % 100) - 1;
+      final parent = _menuItems[parentIndex];
+      if (parent['children'] != null) {
+        final children = parent['children'] as List;
+        if (childIndex < children.length) {
+          return children[childIndex]['label'] as String;
+        }
+      }
+    }
+    
+    if (_selectedIndex < _menuItems.length) {
+      return _menuItems[_selectedIndex]['label'] as String;
+    }
+    
+    return _menuItems[0]['label'] as String;
   }
 
   Widget _buildMobileDrawer() {

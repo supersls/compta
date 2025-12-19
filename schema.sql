@@ -212,6 +212,18 @@ CREATE TABLE IF NOT EXISTS journaux (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS types_immobilisation (
+  id SERIAL PRIMARY KEY,
+  code VARCHAR(20) UNIQUE NOT NULL,
+  nom VARCHAR(100) NOT NULL,
+  description TEXT,
+  duree_amortissement_defaut INTEGER,
+  compte_immobilisation_defaut VARCHAR(10),
+  compte_amortissement_defaut VARCHAR(10),
+  actif BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Index pour améliorer les performances
 CREATE INDEX IF NOT EXISTS idx_factures_entreprise ON factures(entreprise_id);
 CREATE INDEX IF NOT EXISTS idx_factures_type ON factures(type);

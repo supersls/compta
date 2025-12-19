@@ -62,6 +62,93 @@ router.get('/journaux', async (req, res) => {
   }
 });
 
+// GET types d'immobilisation
+router.get('/types-immobilisation', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM types_immobilisation WHERE actif = true ORDER BY nom');
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur lors de la récupération des types d\'immobilisation' });
+  }
+});
+
+// POST créer un type d'immobilisation
+router.post('/types-immobilisation', async (req, res) => {
+  try {
+    const { code, nom, description, duree_amortissement_defaut, compte_immobilisation_defaut, compte_amortissement_defaut } = req.body;
+    
+    if (!code || !nom) {
+      return res.status(400).json({ 
+        error: 'Les champs code et nom sont obligatoires' 
+      });
+    }
+    
+    const result = await pool.query(
+      `INSERT INTO types_immobilisation (code, nom, description, duree_amortissement_defaut, compte_immobilisation_defaut, compte_amortissement_defaut, actif) 
+       VALUES ($1, $2, $3, $4, $5, $6, true) 
+       RETURNING *`,
+      [code, nom, description, duree_amortissement_defaut, compte_immobilisation_defaut, compte_amortissement_defaut]
+    );
+    
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    if (err.code === '23505') {
+      res.status(409).json({ error: 'Ce code de type existe déjà' });
+    } else {
+      res.status(500).json({ error: 'Erreur lors de la création du type d\'immobilisation' });
+    }
+  }
+});
+
+// PUT mettre à jour un type d'immobilisation
+router.put('/types-immobilisation/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { code, nom, description, duree_amortissement_defaut, compte_immobilisation_defaut, compte_amortissement_defaut, actif } = req.body;
+    
+    const result = await pool.query(
+      `UPDATE types_immobilisation 
+       SET code = $1, nom = $2, description = $3, duree_amortissement_defaut = $4, 
+           compte_immobilisation_defaut = $5, compte_amortissement_defaut = $6, actif = $7
+       WHERE id = $8 
+       RETURNING *`,
+      [code, nom, description, duree_amortissement_defaut, compte_immobilisation_defaut, compte_amortissement_defaut, actif, id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Type d\'immobilisation non trouvé' });
+    }
+    
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur lors de la mise à jour du type d\'immobilisation' });
+  }
+});
+
+// DELETE supprimer un type d'immobilisation
+router.delete('/types-immobilisation/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const result = await pool.query(
+      'DELETE FROM types_immobilisation WHERE id = $1 RETURNING *',
+      [id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Type d\'immobilisation non trouvé' });
+    }
+    
+    res.json({ message: 'Type d\'immobilisation supprimé avec succès' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur lors de la suppression du type d\'immobilisation' });
+  }
+});
+
 // POST créer un compte au plan comptable
 router.post('/plan-comptable', async (req, res) => {
   try {

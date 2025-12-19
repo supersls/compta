@@ -30,6 +30,7 @@ dependencies:
   # UI et design
   google_fonts: ^6.1.0
   flutter_svg: ^2.0.9
+  flutter_admin_scaffold: ^1.2.0
   
   # Import de fichiers
   file_picker: ^6.1.1

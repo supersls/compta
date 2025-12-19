@@ -232,11 +232,12 @@ router.get('/detail-taux/:debut/:fin', async (req, res) => {
     
     let query = `
       SELECT 
-        taux_tva as taux,
+        ROUND((montant_tva / NULLIF(montant_ht, 0) * 100)::numeric, 2) as taux,
         SUM(CASE WHEN type = 'vente' THEN montant_tva ELSE 0 END) as tva_collectee,
         SUM(CASE WHEN type = 'achat' THEN montant_tva ELSE 0 END) as tva_deductible
       FROM factures
-      WHERE date_emission BETWEEN $1 AND $2`;
+      WHERE date_emission BETWEEN $1 AND $2
+        AND montant_ht > 0`;
     
     const params = [debut, fin];
     
@@ -246,8 +247,8 @@ router.get('/detail-taux/:debut/:fin', async (req, res) => {
     }
     
     query += `
-      GROUP BY taux_tva
-      ORDER BY taux_tva DESC`;
+      GROUP BY ROUND((montant_tva / NULLIF(montant_ht, 0) * 100)::numeric, 2)
+      ORDER BY taux DESC`;
     
     const result = await pool.query(query, params);
     

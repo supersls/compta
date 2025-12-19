@@ -66,6 +66,19 @@ INSERT INTO journaux (code, nom, description, type, actif) VALUES
 ON CONFLICT (code) DO NOTHING;
 
 -- ============================================================================
+-- TYPES D'IMMOBILISATION - Données essentielles
+-- ============================================================================
+
+INSERT INTO types_immobilisation (code, nom, description, duree_amortissement_defaut, compte_immobilisation_defaut, compte_amortissement_defaut, actif) VALUES
+('MATERIEL', 'Matériel et outillage', 'Matériel et outillage industriel et commercial', 5, '2154', '28154', true),
+('VEHICULE', 'Véhicule', 'Véhicules de tourisme et utilitaires', 5, '2182', '28182', true),
+('MOBILIER', 'Mobilier', 'Mobilier de bureau', 10, '2184', '28184', true),
+('INFORMATIQUE', 'Matériel informatique', 'Ordinateurs, serveurs, équipements informatiques', 3, '2183', '28183', true),
+('LOGICIEL', 'Logiciel', 'Logiciels et licences', 3, '205', '2805', true),
+('IMMOBILIER', 'Immobilier', 'Constructions et bâtiments', 20, '213', '2813', true)
+ON CONFLICT (code) DO NOTHING;
+
+-- ============================================================================
 -- ENTREPRISE - Données de démonstration
 -- ============================================================================
 

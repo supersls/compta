@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'entreprise_admin_screen.dart';
 import 'plan_comptable_screen.dart';
 import 'journaux_screen.dart';
+import 'types_immobilisation_screen.dart';
 
 class AdministrationScreen extends StatelessWidget {
   const AdministrationScreen({super.key});
@@ -75,6 +76,18 @@ class AdministrationScreen extends StatelessWidget {
                       context,
                       MaterialPageRoute(
                         builder: (context) => const JournauxScreen(),
+                      ),
+                    ),
+                  ),
+                  _AdminCard(
+                    title: 'Types d\'immobilisation',
+                    description: 'Gérer les types d\'immobilisation',
+                    icon: Icons.category,
+                    color: Colors.purple,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const TypesImmobilisationScreen(),
                       ),
                     ),
                   ),

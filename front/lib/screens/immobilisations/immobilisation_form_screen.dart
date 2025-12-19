@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/immobilisation.dart';
 import '../../services/immobilisation_service.dart';
+import '../../services/api_service.dart';
 import '../../utils/formatters.dart';
 import '../../utils/validators.dart';
 
@@ -28,6 +29,8 @@ class _ImmobilisationFormScreenState extends State<ImmobilisationFormScreen> {
   DateTime _dateAcquisition = DateTime.now();
   bool _isLoading = false;
   bool _isEditMode = false;
+  bool _isLoadingTypes = true;
+  List<Map<String, dynamic>> _types = [];
 
   @override
   void initState() {
@@ -52,6 +55,34 @@ class _ImmobilisationFormScreenState extends State<ImmobilisationFormScreen> {
       _dureeController = TextEditingController();
       _tauxController = TextEditingController();
       _notesController = TextEditingController();
+    }
+    
+    _loadTypes();
+  }
+
+  Future<void> _loadTypes() async {
+    setState(() => _isLoadingTypes = true);
+    try {
+      final data = await ApiService.get('comptabilite/types-immobilisation');
+      setState(() {
+        _types = List<Map<String, dynamic>>.from(data);
+        _isLoadingTypes = false;
+        // Définir le premier type par défaut si disponible
+        if (_types.isNotEmpty && !_isEditMode) {
+          _type = _types.first['code'].toString().toLowerCase();
+          // Préremplir la durée d'amortissement par défaut
+          if (_types.first['duree_amortissement_defaut'] != null) {
+            _dureeController.text = _types.first['duree_amortissement_defaut'].toString();
+          }
+        }
+      });
+    } catch (e) {
+      setState(() => _isLoadingTypes = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur lors du chargement des types: $e'), backgroundColor: Colors.red),
+        );
+      }
     }
   }
 
@@ -131,22 +162,34 @@ class _ImmobilisationFormScreenState extends State<ImmobilisationFormScreen> {
               validator: (value) => AppValidators.validateRequired(value, 'Désignation'),
             ),
             const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              value: _type,
-              decoration: const InputDecoration(
-                labelText: 'Type',
-                prefixIcon: Icon(Icons.category),
-              ),
-              items: const [
-                DropdownMenuItem(value: 'materiel', child: Text('Matériel')),
-                DropdownMenuItem(value: 'vehicule', child: Text('Véhicule')),
-                DropdownMenuItem(value: 'logiciel', child: Text('Logiciel')),
-                DropdownMenuItem(value: 'immobilier', child: Text('Immobilier')),
-              ],
-              onChanged: (value) {
-                setState(() => _type = value!);
-              },
-            ),
+            _isLoadingTypes
+                ? const LinearProgressIndicator()
+                : DropdownButtonFormField<String>(
+                    value: _types.any((t) => t['code'].toString().toLowerCase() == _type) ? _type : null,
+                    decoration: const InputDecoration(
+                      labelText: 'Type',
+                      prefixIcon: Icon(Icons.category),
+                    ),
+                    items: _types.map((type) {
+                      return DropdownMenuItem<String>(
+                        value: type['code'].toString().toLowerCase(),
+                        child: Text(type['nom']),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _type = value!;
+                        // Auto-remplir la durée d'amortissement par défaut
+                        final selectedType = _types.firstWhere(
+                          (t) => t['code'].toString().toLowerCase() == value,
+                          orElse: () => {},
+                        );
+                        if (selectedType['duree_amortissement_defaut'] != null && !_isEditMode) {
+                          _dureeController.text = selectedType['duree_amortissement_defaut'].toString();
+                        }
+                      });
+                    },
+                  ),
             const SizedBox(height: 16),
             ListTile(
               contentPadding: EdgeInsets.zero,
