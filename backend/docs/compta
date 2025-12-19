@@ -1,0 +1,217 @@
+# 📘 Résumé PCG & Journaux comptables
+
+## Entreprise Individuelle – Freelance informatique
+
+Ce document synthétise :
+
+* les **comptes PCG essentiels** pour une EI de prestations informatiques
+* les **journaux comptables** à tenir, avec leur rôle et exemples
+
+---
+
+## 1️⃣ Rappels fondamentaux
+
+### Actif / Passif
+
+* **Actif** : ce que l’entreprise possède (banque, clients, matériel)
+* **Passif** : ce que l’entreprise doit ou l’origine des fonds (exploitant, TVA, fournisseurs)
+
+> **Actif = utilisation de l’argent**
+> **Passif = origine de l’argent**
+
+Le bilan est toujours équilibré :
+
+```
+TOTAL ACTIF = TOTAL PASSIF
+```
+
+---
+
+## 2️⃣ Plan de comptes PCG – EI Freelance informatique
+
+### 🟦 Classe 1 – Capitaux propres
+
+| Compte | Libellé                |
+| ------ | ---------------------- |
+| 108    | Compte de l’exploitant |
+| 120    | Résultat de l’exercice |
+
+---
+
+### 🟦 Classe 2 – Immobilisations (actif)
+
+*(biens > 1 an et > ~500 € HT)*
+
+| Compte | Libellé                      |
+| ------ | ---------------------------- |
+| 203    | Logiciels                    |
+| 203100 | Licences logicielles         |
+| 2183   | Matériel informatique        |
+| 218301 | PC portable                  |
+| 218302 | Écran                        |
+| 28183  | Amort. matériel informatique |
+| 2803   | Amort. logiciels             |
+
+---
+
+### 🟦 Classe 4 – Tiers
+
+| Compte | Libellé                        |
+| ------ | ------------------------------ |
+| 411    | Clients                        |
+| 401    | Fournisseurs                   |
+| 44566  | TVA déductible                 |
+| 44562  | TVA déductible immobilisations |
+| 44571  | TVA collectée                  |
+| 44551  | TVA à décaisser                |
+
+---
+
+### 🟦 Classe 5 – Trésorerie
+
+| Compte | Libellé       |
+| ------ | ------------- |
+| 512    | Banque        |
+| 530    | Caisse (rare) |
+
+---
+
+### 🟨 Classe 6 – Charges
+
+| Compte | Libellé                       |
+| ------ | ----------------------------- |
+| 6063   | Petit matériel informatique   |
+| 611    | Sous-traitance                |
+| 613    | Loyers / quote-part domicile  |
+| 618    | Abonnements / formations      |
+| 622    | Honoraires (expert-comptable) |
+| 626    | Télécoms / Internet           |
+| 627    | Frais bancaires               |
+| 635    | Taxes (CFE…)                  |
+| 681    | Dotations aux amortissements  |
+
+⚠️ Les **prélèvements personnels** ne sont **pas des charges** → compte **108**
+
+---
+
+### 🟩 Classe 7 – Produits
+
+| Compte | Libellé                   |
+| ------ | ------------------------- |
+| 706    | Prestations de services   |
+| 706100 | Prestations développement |
+| 706200 | Prestations conseil       |
+
+---
+
+## 3️⃣ Journaux comptables obligatoires
+
+En EI au réel, 3 journaux suffisent dans la majorité des cas :
+
+| Journal                 | Rôle                                 |
+| ----------------------- | ------------------------------------ |
+| Journal des ventes (JV) | Factures clients émises              |
+| Journal des achats (JA) | Factures fournisseurs / charges      |
+| Journal de banque (JB)  | Tous les mouvements bancaires        |
+| Journal OD (optionnel)  | Amortissements, TVA, régularisations |
+
+---
+
+## 4️⃣ Exemples d’écritures par journal
+
+### 🟩 Journal des ventes (JV)
+
+**Facture client – 2 000 € HT + TVA 20 %**
+
+```
+411   Débit 2 400
+  706        Crédit 2 000
+  44571      Crédit   400
+```
+
+---
+
+### 🟥 Journal des achats (JA)
+
+**Abonnement logiciel – 50 € HT**
+
+```
+618   Débit   50
+44566 Débit   10
+  401        Crédit 60
+```
+
+**Achat PC – immobilisation – 1 500 € HT**
+
+```
+218301 Débit 1 500
+44562  Débit   300
+  401         Crédit 1 800
+```
+
+---
+
+### 🟦 Journal de banque (JB)
+
+**Encaissement facture client**
+
+```
+512   Débit 2 400
+  411        Crédit 2 400
+```
+
+**Paiement fournisseur**
+
+```
+401   Débit   60
+  512        Crédit 60
+```
+
+**Prélèvement personnel**
+
+```
+108   Débit 500
+  512        Crédit 500
+```
+
+---
+
+### 🟨 Journal des opérations diverses (OD)
+
+**Dotation amortissement PC (3 ans)**
+
+```
+681   Débit 500
+  28183      Crédit 500
+```
+
+**TVA à décaisser**
+
+```
+44571 Débit 400
+  44566      Crédit 310
+  44551      Crédit 90
+```
+
+---
+
+## 5️⃣ Bonnes pratiques (EI)
+
+* Journaux **chronologiques**
+* Une écriture = une **pièce justificative**
+* Séparation stricte **pro / perso**
+* Sous-comptes libres mais cohérents
+* Excel accepté si clair et non modifiable
+
+---
+
+## 6️⃣ Résumé express
+
+* **PCG** : cadre légal, sous-comptes libres
+* **Classe 6 / 7** → résultat
+* **Classe 4 / 5** → TVA et trésorerie
+* **3 journaux principaux** suffisent
+
+---
+
+📌 Document adapté à une **EI freelance informatique au réel** (TVA)

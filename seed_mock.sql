@@ -89,17 +89,6 @@ VALUES (
 )
 ON CONFLICT (siret) DO NOTHING;
 
-
--- ============================================================================
--- CLIENTS - Données de test
--- ============================================================================
-
-INSERT INTO clients (entreprise_id, nom, siret, adresse, code_postal, ville, email, telephone, contact_principal, actif, created_at, updated_at)
-VALUES 
-(1, 'ITERA', '12312312312312', '123 Rue du Commerce', '75015', 'Paris', 'contact@itera.fr', '0145678912', 'Jean Dupont', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(1, 'Weevi', '12312312312313', '456 Avenue des Champs', '75008', 'Paris', 'contact@weevi.fr', '0145678913', 'Marie Martin', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-ON CONFLICT DO NOTHING;
-
 -- ============================================================================
 -- CLIENTS - Données de test
 -- ============================================================================
@@ -117,6 +106,41 @@ ON CONFLICT DO NOTHING;
 INSERT INTO comptes_bancaires (entreprise_id, nom, banque, numero_compte, iban, solde_initial, solde_actuel, date_ouverture, actif)
 VALUES
   (1, 'Compte Courant Principal', 'SHINE', '30004012345678901', 'FR7630004012345678901234567', 5000.00, 12500.00, '2023-01-10', true)
+ON CONFLICT DO NOTHING;
+
+-- ============================================================================
+-- TRANSACTIONS BANCAIRES - Données de test
+-- ============================================================================
+
+INSERT INTO transactions_bancaires (compte_bancaire_id, date_transaction, libelle, debit, credit, solde, categorie, rapproche)
+VALUES
+  (1, '2025-12-01', 'Virement salaire', 0, 3500.00, 8500.00, 'Revenus', true),
+  (1, '2025-12-02', 'Loyer bureau', 1200.00, 0, 7300.00, 'Loyer', true),
+  (1, '2025-12-05', 'Facture électricité', 150.00, 0, 7150.00, 'Charges', true),
+  (1, '2025-12-08', 'Vente prestation', 0, 2500.00, 9650.00, 'Ventes', true),
+  (1, '2025-12-10', 'Fournitures bureau', 85.50, 0, 9564.50, 'Achats', true),
+  (1, '2025-12-12', 'Paiement fournisseur', 450.00, 0, 9114.50, 'Achats', true),
+  (1, '2025-12-14', 'Vente prestation', 0, 3385.50, 12500.00, 'Ventes', true),
+  (1, '2025-12-01', 'Virement initial', 0, 5000.00, 15000.00, 'Apport', true),
+  (1, '2025-12-03', 'Achat matériel', 1500.00, 0, 13500.00, 'Investissement', true),
+  (1, '2025-12-07', 'Paiement assurance', 850.00, 0, 12650.00, 'Assurance', true),
+  (1, '2025-12-11', 'Remboursement TVA', 0, 1200.00, 13850.00, 'TVA', true),
+  (1, '2025-12-13', 'Services bancaires', 25.00, 0, 13825.00, 'Frais bancaires', true),
+  (1, '2025-11-30', 'Virement épargne', 0, 2000.00, 22000.00, 'Épargne', true),
+  (1, '2025-12-10', 'Intérêts', 0, 300.00, 22300.00, 'Produits financiers', true)
+ON CONFLICT DO NOTHING;
+
+-- ============================================================================
+-- IMMOBILISATIONS - Données de test
+-- ============================================================================
+
+INSERT INTO immobilisations (entreprise_id, libelle, type, date_acquisition, valeur_acquisition, duree_amortissement, methode_amortissement, taux_amortissement, compte_immobilisation, compte_amortissement, en_service)
+VALUES
+  (1, 'Ordinateur portable Dell XPS', 'materiel', '2024-01-15', 1500.00, 3, 'lineaire', 33.33, '2183', '28183', true),
+  (1, 'Véhicule utilitaire Renault', 'vehicule', '2023-06-01', 25000.00, 5, 'lineaire', 20.00, '2182', '28182', true),
+  (1, 'Photocopieur professionnel', 'materiel', '2024-03-20', 3500.00, 5, 'lineaire', 20.00, '2183', '28183', true),
+  (1, 'Bureau ergonomique', 'mobilier', '2024-02-10', 800.00, 10, 'lineaire', 10.00, '2184', '28183', true),
+  (1, 'Serveur informatique', 'materiel', '2023-09-01', 8000.00, 3, 'lineaire', 33.33, '2183', '28183', true)
 ON CONFLICT DO NOTHING;
 
 -- ============================================================================
@@ -177,3 +201,93 @@ SELECT
   CURRENT_TIMESTAMP
 FROM factures
 WHERE statut = 'payee' AND type = 'vente';
+
+-- ============================================================================
+-- ÉCRITURES COMPTABLES - Données de test
+-- ============================================================================
+
+INSERT INTO ecritures_comptables (entreprise_id, numero_piece, date_ecriture, journal, compte, libelle, debit, credit, validee)
+VALUES
+  -- Ventes de décembre 2025
+  (1, 'VT-2025-001', '2025-12-01', 'VE', '411', 'Client - Prestation de service', 3000.00, 0, true),
+  (1, 'VT-2025-001', '2025-12-01', 'VE', '706', 'Prestations de services', 0, 2500.00, true),
+  (1, 'VT-2025-001', '2025-12-01', 'VE', '4457', 'TVA collectée', 0, 500.00, true),
+  
+  (1, 'VT-2025-002', '2025-12-08', 'VE', '411', 'Client - Vente marchandises', 4800.00, 0, true),
+  (1, 'VT-2025-002', '2025-12-08', 'VE', '707', 'Ventes de marchandises', 0, 4000.00, true),
+  (1, 'VT-2025-002', '2025-12-08', 'VE', '4457', 'TVA collectée', 0, 800.00, true),
+  
+  (1, 'VT-2025-003', '2025-12-14', 'VE', '411', 'Client - Prestation conseil', 4062.30, 0, true),
+  (1, 'VT-2025-003', '2025-12-14', 'VE', '706', 'Prestations de services', 0, 3385.25, true),
+  (1, 'VT-2025-003', '2025-12-14', 'VE', '4457', 'TVA collectée', 0, 677.05, true),
+  
+  -- Achats et charges
+  (1, 'AC-2025-001', '2025-12-02', 'AC', '613', 'Locations', 1200.00, 0, true),
+  (1, 'AC-2025-001', '2025-12-02', 'AC', '401', 'Fournisseurs', 0, 1200.00, true),
+  
+  (1, 'AC-2025-002', '2025-12-03', 'AC', '607', 'Achats de marchandises', 1250.00, 0, true),
+  (1, 'AC-2025-002', '2025-12-03', 'AC', '4456', 'TVA déductible', 250.00, 0, true),
+  (1, 'AC-2025-002', '2025-12-03', 'AC', '401', 'Fournisseurs', 0, 1500.00, true),
+  
+  (1, 'AC-2025-003', '2025-12-05', 'AC', '615', 'Entretien et réparations', 150.00, 0, true),
+  (1, 'AC-2025-003', '2025-12-05', 'AC', '512', 'Banque', 0, 150.00, true),
+  
+  (1, 'AC-2025-004', '2025-12-07', 'AC', '616', 'Assurances', 850.00, 0, true),
+  (1, 'AC-2025-004', '2025-12-07', 'AC', '512', 'Banque', 0, 850.00, true),
+  
+  (1, 'AC-2025-005', '2025-12-10', 'AC', '607', 'Achats de marchandises', 71.25, 0, true),
+  (1, 'AC-2025-005', '2025-12-10', 'AC', '4456', 'TVA déductible', 14.25, 0, true),
+  (1, 'AC-2025-005', '2025-12-10', 'AC', '512', 'Banque', 0, 85.50, true),
+  
+  (1, 'AC-2025-006', '2025-12-12', 'AC', '601', 'Achats de matières premières', 375.00, 0, true),
+  (1, 'AC-2025-006', '2025-12-12', 'AC', '4456', 'TVA déductible', 75.00, 0, true),
+  (1, 'AC-2025-006', '2025-12-12', 'AC', '401', 'Fournisseurs', 0, 450.00, true),
+  
+  (1, 'AC-2025-007', '2025-12-13', 'AC', '627', 'Services bancaires', 25.00, 0, true),
+  (1, 'AC-2025-007', '2025-12-13', 'AC', '512', 'Banque', 0, 25.00, true),
+  
+  -- Salaires
+  (1, 'SA-2025-001', '2025-12-01', 'OD', '621', 'Personnel', 3500.00, 0, true),
+  (1, 'SA-2025-001', '2025-12-01', 'OD', '512', 'Banque', 0, 3500.00, true),
+  
+  -- Ventes novembre 2025 (pour avoir plus de données)
+  (1, 'VT-2025-N01', '2025-11-05', 'VE', '411', 'Client - Vente', 3600.00, 0, true),
+  (1, 'VT-2025-N01', '2025-11-05', 'VE', '707', 'Ventes de marchandises', 0, 3000.00, true),
+  (1, 'VT-2025-N01', '2025-11-05', 'VE', '4457', 'TVA collectée', 0, 600.00, true),
+  
+  (1, 'VT-2025-N02', '2025-11-15', 'VE', '411', 'Client - Prestation', 2400.00, 0, true),
+  (1, 'VT-2025-N02', '2025-11-15', 'VE', '706', 'Prestations de services', 0, 2000.00, true),
+  (1, 'VT-2025-N02', '2025-11-15', 'VE', '4457', 'TVA collectée', 0, 400.00, true),
+  
+  -- Charges novembre 2025
+  (1, 'AC-2025-N01', '2025-11-02', 'AC', '613', 'Locations', 1200.00, 0, true),
+  (1, 'AC-2025-N01', '2025-11-02', 'AC', '401', 'Fournisseurs', 0, 1200.00, true),
+  
+  (1, 'AC-2025-N02', '2025-11-10', 'AC', '607', 'Achats de marchandises', 800.00, 0, true),
+  (1, 'AC-2025-N02', '2025-11-10', 'AC', '4456', 'TVA déductible', 160.00, 0, true),
+  (1, 'AC-2025-N02', '2025-11-10', 'AC', '401', 'Fournisseurs', 0, 960.00, true),
+  
+  (1, 'SA-2025-N01', '2025-11-01', 'OD', '621', 'Personnel', 3500.00, 0, true),
+  (1, 'SA-2025-N01', '2025-11-01', 'OD', '512', 'Banque', 0, 3500.00, true)
+ON CONFLICT DO NOTHING;
+
+-- ============================================================================
+-- RÉSUMÉ FINAL
+-- ============================================================================
+
+DO $$
+BEGIN
+    RAISE NOTICE '============================================================';
+    RAISE NOTICE 'Données de test insérées avec succès!';
+    RAISE NOTICE '============================================================';
+    RAISE NOTICE 'Comptes PCG: %', (SELECT COUNT(*) FROM comptes_pcg);
+    RAISE NOTICE 'Entreprises: %', (SELECT COUNT(*) FROM entreprise);
+    RAISE NOTICE 'Clients: %', (SELECT COUNT(*) FROM clients);
+    RAISE NOTICE 'Factures: %', (SELECT COUNT(*) FROM factures);
+    RAISE NOTICE 'Montant total factures: % €', (SELECT COALESCE(SUM(montant_ttc), 0) FROM factures);
+    RAISE NOTICE 'Paiements: %', (SELECT COUNT(*) FROM paiements);
+    RAISE NOTICE 'Écritures comptables: %', (SELECT COUNT(*) FROM ecritures_comptables);
+    RAISE NOTICE 'Immobilisations: %', (SELECT COUNT(*) FROM immobilisations);
+    RAISE NOTICE 'Transactions bancaires: %', (SELECT COUNT(*) FROM transactions_bancaires);
+    RAISE NOTICE '============================================================';
+END $$;
