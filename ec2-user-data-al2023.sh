@@ -1,8 +1,4 @@
 #!/bin/bash
-# EC2 User Data Script for Compta EI Application - Amazon Linux 2023
-# This script runs automatically when the EC2 instance is launched
-# Add this script to the "User data" field when launching your EC2 instance
-
 set -e  # Exit on error
 
 # Log everything to a file
@@ -88,10 +84,6 @@ npm --version
 echo "📦 Installing PM2..."
 npm install -g pm2
 
-# Install Nginx
-echo "📦 Installing Nginx..."
-dnf install -y nginx
-
 # Install Git
 echo "📦 Installing Git..."
 dnf install -y git
@@ -158,45 +150,39 @@ chown ec2-user:ec2-user ${APP_DIR}/backend/.env
 mkdir -p ${APP_DIR}/storage/justificatifs/archives
 chown -R ec2-user:ec2-user ${APP_DIR}/storage
 
+# Deploy pre-built Flutter frontend
+if [ -d "${APP_DIR}/front/dist" ]; then
+    echo "🎨 Frontend files found at ${APP_DIR}/front/dist"
+else
+    echo "⚠️ Frontend dist folder not found, creating placeholder..."
+    mkdir -p ${APP_DIR}/front/dist
+    cat > ${APP_DIR}/front/dist/index.html <<'HTML'
+<!DOCTYPE html>
+<html>
+<head><title>Compta EI</title></head>
+<body>
+    <h1>Compta EI</h1>
+    <p>Frontend pending deployment. Build locally with: ./build-frontend.sh</p>
+</body>
+</html>
+HTML
+    chown -R ec2-user:ec2-user ${APP_DIR}/front/dist
+fi
+
 # Start backend with PM2
-echo "🚀 Starting backend..."
+echo "🚀 Starting backend on port ${BACKEND_PORT}..."
 cd ${APP_DIR}/backend
 sudo -u ec2-user pm2 start server.js --name compta-backend
+
+# Start frontend with Python HTTP server on port 8080
+echo "🚀 Starting frontend on port 8080..."
+cd ${APP_DIR}/front/dist
+sudo -u ec2-user pm2 start --name compta-frontend "python3 -m http.server 8080"
+
+# Configure PM2 to start on boot
 sudo -u ec2-user pm2 startup systemd -u ec2-user --hp /home/ec2-user
 sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u ec2-user --hp /home/ec2-user
 sudo -u ec2-user pm2 save
-
-# Configure Nginx
-echo "🔧 Configuring Nginx..."
-cat > /etc/nginx/conf.d/compta.conf <<EOF
-server {
-    listen 80;
-    server_name _;
-
-    # Backend API
-    location /api {
-        proxy_pass http://localhost:${BACKEND_PORT}/api;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-        proxy_cache_bypass \$http_upgrade;
-    }
-
-    # Health check
-    location /health {
-        proxy_pass http://localhost:${BACKEND_PORT}/api/health;
-    }
-}
-EOF
-
-# Test and start Nginx
-nginx -t
-systemctl start nginx
-systemctl enable nginx
 
 # Configure firewall (Amazon Linux 2023 uses firewalld)
 echo "🔒 Configuring firewall..."
@@ -205,6 +191,7 @@ systemctl enable firewalld
 firewall-cmd --permanent --add-service=http
 firewall-cmd --permanent --add-service=https
 firewall-cmd --permanent --add-service=ssh
+firewall-cmd --permanent --add-port=8080/tcp
 firewall-cmd --reload
 
 # Save credentials to a file for admin
@@ -226,8 +213,13 @@ Backend:
   - Restart: pm2 restart compta-backend
 
 Access:
+  - Frontend: http://$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
   - API: http://$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)/api
   - Health: http://$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)/health
+
+Login:
+  - Username: admin
+  - Password: admin
 
 Setup completed at: $(date)
 EOF
@@ -241,3 +233,15 @@ echo "✅ Setup Complete!"
 echo "=========================================="
 echo "Credentials saved to: /home/ec2-user/CREDENTIALS.txt"
 echo "Finished at: $(date)"
+Services:
+  - Backend Port: ${B80
+  - Status: pm2 status
+  - Logs Backend: pm2 logs compta-backend
+  - Logs Frontend: pm2 logs compta-frontend
+  - Restart: pm2 restart all
+
+Access:
+  - Frontend: http://$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4):8080
+  - Frontend: http://$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
+  - API: http://$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4):${BACKEND_PORT}/api
+  - Health: http://$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4):${BACKEND_PORT}/api/health
