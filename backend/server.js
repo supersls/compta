@@ -17,6 +17,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Routes
+app.use('/api/auth', require('./routes/auth'));
 app.use('/api/factures', require('./routes/factures'));
 app.use('/api/clients', require('./routes/clients'));
 app.use('/api/chiffre-affaire', require('./routes/chiffre_affaire'));

@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import 'providers/entreprise_provider.dart';
-import 'screens/dashboard_screen.dart';
+import 'providers/auth_provider.dart';
+import 'widgets/auth_wrapper.dart';
+import 'screens/login_screen.dart';
 import 'screens/clients/clients_list_screen.dart';
 import 'screens/chiffre_affaire/chiffre_affaire_screen.dart';
 import 'screens/factures/factures_list_screen.dart';
@@ -12,13 +14,19 @@ import 'screens/immobilisations/immobilisations_list_screen.dart';
 import 'screens/banque/banque_list_screen.dart';
 import 'screens/documents/documents_list_screen.dart';
 import 'screens/administration/administration_screen.dart';
+import 'screens/dashboard_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('fr_FR', null);
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => EntrepriseProvider()..loadEntreprises(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(
+          create: (_) => EntrepriseProvider()..loadEntreprises(),
+        ),
+      ],
       child: const ComptaApp(),
     ),
   );
@@ -66,14 +74,7 @@ class ComptaApp extends StatelessWidget {
         useMaterial3: true,
       ),
       themeMode: ThemeMode.system,
-      home: Consumer<EntrepriseProvider>(
-        builder: (context, provider, child) {
-          // Utiliser l'ID de l'entreprise comme clé pour forcer le rebuild complet
-          return AdminDashboard(
-            key: ValueKey(provider.selectedEntreprise?.id ?? 0),
-          );
-        },
-      ),
+      home: const AuthWrapper(),
     );
   }
 }
@@ -356,7 +357,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 ),
               ),
             ],
-            onSelected: (value) {
+            onSelected: (value) async {
               if (value == 'administration') {
                 Navigator.push(
                   context,
@@ -364,6 +365,39 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     builder: (context) => const AdministrationScreen(),
                   ),
                 );
+              } else if (value == 'logout') {
+                // Store the provider reference before showing dialog
+                final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                
+                // Logout with confirmation
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (dialogContext) => AlertDialog(
+                    title: const Text('Déconnexion'),
+                    content: const Text('Êtes-vous sûr de vouloir vous déconnecter ?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(dialogContext, false),
+                        child: const Text('Annuler'),
+                      ),
+                      FilledButton(
+                        onPressed: () => Navigator.pop(dialogContext, true),
+                        child: const Text('Déconnexion'),
+                      ),
+                    ],
+                  ),
+                );
+                
+                if (confirmed == true) {
+                  await authProvider.logout();
+                  // Force navigation to login screen
+                  if (context.mounted) {
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (_) => const LoginScreen()),
+                      (route) => false,
+                    );
+                  }
+                }
               }
               // Handle other menu selections
             },
